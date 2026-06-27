@@ -468,7 +468,7 @@ function sendTask() {
 }
 
 // ── 工具 ─────────────────────────────────────────────────
-function show(id)       { document.getElementById(id).style.display = id === 'screen-compose' ? 'flex' : ''; }
+function show(id)       { document.getElementById(id).style.display = id === 'screen-compose' ? 'flex' : 'block'; }
 function hide(id)       { document.getElementById(id).style.display = 'none'; }
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 

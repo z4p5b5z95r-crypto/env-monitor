@@ -496,7 +496,7 @@ function buildFlex(items) {
 }
 
 // ── 工具 ─────────────────────────────────────────────────
-function show(id)        { document.getElementById(id).style.display = id === 'screen-photos' ? 'flex' : ''; }
+function show(id)        { document.getElementById(id).style.display = id === 'screen-photos' ? 'flex' : 'block'; }
 function hide(id)        { document.getElementById(id).style.display = 'none'; }
 function setText(id, v)  { const el = document.getElementById(id); if (el) el.textContent = v; }
 function showOverlay(msg){ document.getElementById('overlay').style.display = 'flex'; setText('overlay-text', msg); }
