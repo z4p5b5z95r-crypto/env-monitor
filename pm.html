@@ -112,6 +112,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 }
 .send-btn:disabled { background: #ddd; color: #aaa; pointer-events: none; }
 
+/* ── 管理畫面 ── */
+#screen-manage        { display: none; }
+#screen-manage-proj   { display: none; }
+.manage-header { background: #185FA5; color: #fff; padding: 48px 16px 14px; }
+.manage-section { background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.manage-section-title { font-size: 12px; font-weight: 600; color: #888; letter-spacing: .04em; padding: 14px 14px 6px; }
+.manage-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-bottom: .5px solid #f5f5f5;
+}
+.manage-row:last-child { border-bottom: none; }
+.manage-row-label { font-size: 14px; color: #333; flex: 1; }
+.manage-row-sub   { font-size: 11px; color: #aaa; }
+.manage-del-btn { background: none; border: none; color: #ddd; font-size: 20px; cursor: pointer; padding: 0 4px; }
+.manage-del-btn:active { color: #e53; }
+.manage-add-row { display: flex; gap: 8px; padding: 10px 14px; background: #fff; border-top: .5px solid #f5f5f5; }
+.manage-add-row input { flex: 1; height: 36px; border: .5px solid #ddd; border-radius: 8px; padding: 0 10px; font-size: 13px; }
+.manage-add-row button { height: 36px; padding: 0 16px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.manage-save-btn { width: 100%; height: 44px; background: #06C755; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+.manage-save-btn:active { opacity: .85; }
+.photo-items-input { width: 100%; min-height: 80px; border: .5px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: 13px; resize: none; font-family: inherit; }
+
 /* ── Toast ── */
 #toast {
   position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
@@ -130,13 +152,66 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 
 <!-- 計畫選擇 -->
 <div id="screen-project">
-  <div class="header">
-    <div class="header-title">發送拍照任務</div>
-    <div class="header-hint">選擇監測計畫</div>
+  <div class="header" style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:14px">
+    <div>
+      <div class="header-title">發送拍照任務</div>
+      <div class="header-hint">選擇監測計畫</div>
+    </div>
+    <button onclick="showManageScreen()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">⚙️ 管理</button>
   </div>
   <div style="padding:14px">
     <div class="section-label">計畫清單</div>
     <div id="project-list"></div>
+  </div>
+</div>
+
+<!-- 管理主畫面 -->
+<div id="screen-manage">
+  <div class="manage-header">
+    <button class="back-btn" onclick="showProjectScreen()">← 返回</button>
+    <div style="font-size:18px;font-weight:600">計畫管理</div>
+  </div>
+  <div style="padding:14px">
+    <div class="manage-section">
+      <div class="manage-section-title">新增計畫</div>
+      <div style="padding:0 14px 14px;display:flex;flex-direction:column;gap:8px">
+        <input id="new-proj-name" type="text" placeholder="計畫名稱（必填）" style="height:36px;border:.5px solid #ddd;border-radius:8px;padding:0 10px;font-size:13px;width:100%">
+        <input id="new-proj-desc" type="text" placeholder="說明（選填）" style="height:36px;border:.5px solid #ddd;border-radius:8px;padding:0 10px;font-size:13px;width:100%">
+        <button onclick="addProject()" style="height:40px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">新增計畫</button>
+      </div>
+    </div>
+    <div class="manage-section">
+      <div class="manage-section-title">現有計畫（點入管理點位）</div>
+      <div id="manage-proj-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 計畫內管理（點位 + 拍照項目） -->
+<div id="screen-manage-proj">
+  <div class="manage-header">
+    <button class="back-btn" onclick="showManageScreen()">← 返回計畫管理</button>
+    <div id="mp-title" style="font-size:18px;font-weight:600"></div>
+  </div>
+  <div style="padding:14px">
+    <!-- 點位管理 -->
+    <div class="manage-section">
+      <div class="manage-section-title">監測點位</div>
+      <div id="mp-station-list"></div>
+      <div class="manage-add-row">
+        <input id="new-st-name" type="text" placeholder="點位名稱">
+        <input id="new-st-loc"  type="text" placeholder="地點（選填）" style="flex:.8">
+        <button onclick="addStation()">＋</button>
+      </div>
+    </div>
+    <!-- 拍照項目 -->
+    <div class="manage-section">
+      <div class="manage-section-title">拍照項目（用逗號分隔）</div>
+      <div style="padding:10px 14px">
+        <textarea class="photo-items-input" id="mp-photo-items" placeholder="例：環境照,水色,洗井紀錄表"></textarea>
+        <button class="manage-save-btn" onclick="savePhotoItems()">儲存拍照項目</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -248,7 +323,12 @@ async function init() {
 
 // ── 計畫選擇畫面 ──────────────────────────────────────────
 function showProjectScreen() {
-  show('screen-project'); hide('screen-loading'); hide('screen-compose');
+  show('screen-project');
+  hide('screen-loading'); hide('screen-compose'); hide('screen-manage'); hide('screen-manage-proj');
+  renderProjectList();
+}
+
+function renderProjectList() {
   document.getElementById('project-list').innerHTML = projects.map(p => `
     <div class="proj-btn" onclick='selectProject(${JSON.stringify(p)})'>
       <div class="proj-dot"></div>
@@ -465,6 +545,120 @@ function sendTask() {
   Promise.all([shareP, recordP])
     .then(() => showToast('任務已發送 ✓'))
     .catch(() => showToast('已取消'));
+}
+
+// ── 管理功能 ──────────────────────────────────────────────
+let managingProject = null;
+let manageStations  = [];
+
+async function showManageScreen() {
+  hide('screen-project'); hide('screen-compose'); hide('screen-manage-proj');
+  show('screen-manage');
+  renderManageProjList();
+}
+
+function renderManageProjList() {
+  document.getElementById('manage-proj-list').innerHTML = projects.length
+    ? projects.map(p => `
+        <div class="manage-row" onclick='openManageProject(${JSON.stringify(p)})' style="cursor:pointer">
+          <div>
+            <div class="manage-row-label">${p.name}</div>
+            ${p.description ? `<div class="manage-row-sub">${p.description}</div>` : ''}
+          </div>
+          <span style="color:#aaa;font-size:18px">›</span>
+        </div>`).join('')
+    : '<div style="padding:14px;font-size:13px;color:#aaa">尚無計畫</div>';
+}
+
+async function addProject() {
+  const name = document.getElementById('new-proj-name').value.trim();
+  if (!name) { showToast('請輸入計畫名稱'); return; }
+  const desc = document.getElementById('new-proj-desc').value.trim();
+  try {
+    const res  = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'createProject', name, description: desc }) });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    showToast('計畫已新增 ✓');
+    document.getElementById('new-proj-name').value = '';
+    document.getElementById('new-proj-desc').value = '';
+    // 重新載入計畫清單
+    const pRes = await fetch(`${GAS_URL}?action=getProjects`);
+    const pJson = await pRes.json();
+    projects = pJson.data || [];
+    renderManageProjList();
+    renderProjectList();
+  } catch (e) { showToast('新增失敗：' + e.message); }
+}
+
+async function openManageProject(project) {
+  managingProject = project;
+  setText('mp-title', project.name);
+  hide('screen-manage');
+  show('screen-manage-proj');
+  // 載入點位
+  try {
+    const sRes = await fetch(`${GAS_URL}?action=getStations&projectId=${project.projectId}`);
+    manageStations = (await sRes.json()).data || [];
+  } catch (e) { manageStations = []; }
+  renderManageStations();
+  // 載入現有拍照項目
+  try {
+    const tRes = await fetch(`${GAS_URL}?action=getTemplates&projectId=${project.projectId}`);
+    const tpl  = ((await tRes.json()).data || []).find(t => t.category === '拍照任務');
+    document.getElementById('mp-photo-items').value = tpl ? tpl.photoItems : '';
+  } catch (e) {}
+}
+
+function renderManageStations() {
+  const el = document.getElementById('mp-station-list');
+  el.innerHTML = manageStations.length
+    ? manageStations.map(s => `
+        <div class="manage-row">
+          <div style="flex:1">
+            <div class="manage-row-label">${s.name}</div>
+            ${s.location ? `<div class="manage-row-sub">${s.location}</div>` : ''}
+          </div>
+          <button class="manage-del-btn" onclick="delStation('${s.stationId}')">×</button>
+        </div>`).join('')
+    : '<div style="padding:12px 14px;font-size:13px;color:#aaa">尚無點位</div>';
+}
+
+async function addStation() {
+  const name = document.getElementById('new-st-name').value.trim();
+  if (!name) { showToast('請輸入點位名稱'); return; }
+  const loc  = document.getElementById('new-st-loc').value.trim();
+  try {
+    const res  = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'createStation', projectId: managingProject.projectId, name, location: loc }) });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    showToast('點位已新增 ✓');
+    document.getElementById('new-st-name').value = '';
+    document.getElementById('new-st-loc').value  = '';
+    const sRes = await fetch(`${GAS_URL}?action=getStations&projectId=${managingProject.projectId}`);
+    manageStations = (await sRes.json()).data || [];
+    renderManageStations();
+  } catch (e) { showToast('新增失敗：' + e.message); }
+}
+
+async function delStation(stationId) {
+  if (!confirm('確定刪除這個點位？')) return;
+  try {
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteStation', stationId }) });
+    manageStations = manageStations.filter(s => s.stationId !== stationId);
+    renderManageStations();
+    showToast('已刪除');
+  } catch (e) { showToast('刪除失敗'); }
+}
+
+async function savePhotoItems() {
+  const photoItems = document.getElementById('mp-photo-items').value.trim();
+  if (!photoItems) { showToast('請輸入拍照項目'); return; }
+  try {
+    const res  = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'savePhotoItems', projectId: managingProject.projectId, photoItems }) });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    showToast('拍照項目已儲存 ✓');
+  } catch (e) { showToast('儲存失敗：' + e.message); }
 }
 
 // ── 工具 ─────────────────────────────────────────────────
