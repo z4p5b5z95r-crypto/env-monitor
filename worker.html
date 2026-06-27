@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>現場拍照任務</title>
+<script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f8f8; -webkit-tap-highlight-color: transparent; }
+
+/* ── 共用 ── */
+.header { background: #185FA5; color: #fff; padding: 48px 16px 14px; }
+.header-sub   { font-size: 11px; opacity: .75; margin-bottom: 2px; }
+.header-title { font-size: 18px; font-weight: 600; }
+.header-hint  { font-size: 11px; opacity: .8; margin-top: 3px; }
+.back-btn { background: none; border: none; color: rgba(255,255,255,.85); font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+
+.spinner { width: 36px; height: 36px; border: 3px solid #ddd; border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 載入畫面 ── */
+#screen-loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100vh; gap: 12px;
+}
+#loading-text { font-size: 13px; color: #888; }
+
+/* ── 點位選擇 ── */
+#screen-station { display: none; }
+.section-wrap { padding: 14px; }
+.section-label { font-size: 12px; font-weight: 600; color: #888; letter-spacing: .04em; margin-bottom: 10px; }
+.station-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.station-btn {
+  background: #fff; border: .5px solid #ddd; border-radius: 12px;
+  padding: 14px 12px; text-align: left; cursor: pointer; width: 100%;
+  transition: border-color .15s, background .15s;
+}
+.station-btn:active { border-color: #185FA5; background: #EBF4FF; }
+.s-name { font-size: 13px; font-weight: 600; color: #333; }
+.s-loc  { font-size: 11px; color: #888; margin-top: 3px; }
+.s-note { font-size: 10px; color: #D97706; margin-top: 3px; }
+
+/* ── 照片清單 ── */
+#screen-photos { display: none; flex-direction: column; height: 100vh; }
+.photos-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+.item-card { background: #fff; border-radius: 12px; overflow: hidden; }
+.item-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+.item-name { font-size: 13px; font-weight: 600; color: #333; flex: 1; }
+.item-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap;
+}
+.badge-none   { background: #f0f0f0; color: #aaa; }
+.badge-unsent { background: #FFF8E1; color: #B45309; }
+.badge-sent   { background: #E8F5E9; color: #1D9E75; }
+
+.thumb-row { padding: 0 12px 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: .5px solid #ddd; }
+.add-btn {
+  width: 56px; height: 56px; border-radius: 8px; border: 1.5px dashed #ccc;
+  background: none; cursor: pointer; font-size: 24px; color: #bbb;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, color .15s;
+}
+.add-btn:active { border-color: #185FA5; color: #185FA5; background: #EBF4FF; }
+
+.item-actions { border-top: .5px solid #f5f5f5; padding: 8px 12px; display: flex; gap: 8px; align-items: center; }
+.send-btn {
+  height: 30px; padding: 0 14px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;
+  transition: all .15s;
+}
+.send-active   { background: #06C755; color: #fff; }
+.send-sent     { background: #E8F5E9; color: #1D9E75; pointer-events: none; }
+.send-disabled { background: #f0f0f0; color: #ccc; pointer-events: none; }
+
+/* ── 底部按鈕列 ── */
+.bottom-bar {
+  background: #fff; border-top: .5px solid #eee;
+  padding: 10px 12px; display: flex; gap: 8px; flex-shrink: 0;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+.bulk-btn {
+  flex: 1; height: 40px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; display: flex; align-items: center;
+  justify-content: center; gap: 4px; transition: opacity .15s;
+}
+.bulk-unsent  { background: #E6F1FB; color: #185FA5; border: .5px solid #185FA5; }
+.bulk-all     { background: #06C755; color: #fff; }
+.bulk-disabled { opacity: .4; pointer-events: none; }
+
+/* ── 上傳遮罩 ── */
+#overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: none; align-items: center; justify-content: center; z-index: 100;
+}
+.overlay-box {
+  background: #fff; border-radius: 16px; padding: 24px 28px;
+  text-align: center; min-width: 180px;
+}
+.overlay-box .spinner { margin: 0 auto; }
+#overlay-text { font-size: 13px; color: #555; margin-top: 12px; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.75); color: #fff; font-size: 12px;
+  padding: 8px 18px; border-radius: 20px; display: none; z-index: 200;
+  white-space: nowrap; pointer-events: none;
+}
+
+/* 隱藏的 file input 容器 */
+#inputs { display: none; }
+</style>
+</head>
+<body>
+
+<!-- 載入畫面 -->
+<div id="screen-loading">
+  <div class="spinner"></div>
+  <div id="loading-text">初始化中...</div>
+</div>
+
+<!-- 點位選擇 -->
+<div id="screen-station">
+  <div class="header">
+    <div class="header-sub" id="st-project"></div>
+    <div class="header-title">選擇監測點位</div>
+    <div class="header-hint" id="st-date"></div>
+  </div>
+  <div class="section-wrap">
+    <div class="section-label">今日點位</div>
+    <div class="station-grid" id="station-grid"></div>
+  </div>
+</div>
+
+<!-- 照片清單 -->
+<div id="screen-photos">
+  <div class="header">
+    <button class="back-btn" onclick="showStationScreen()">← 切換點位</button>
+    <div class="header-sub" id="ph-station"></div>
+    <div class="header-title" id="ph-project"></div>
+    <div class="header-hint" id="ph-progress"></div>
+  </div>
+  <div class="photos-body" id="photos-body"></div>
+  <div class="bottom-bar">
+    <button class="bulk-btn bulk-unsent bulk-disabled" id="btn-unsent" onclick="notifyUnsent()">傳未送的給 PM</button>
+    <button class="bulk-btn bulk-all bulk-disabled"   id="btn-all"    onclick="notifyAll()">全部傳給 PM</button>
+  </div>
+</div>
+
+<!-- 上傳遮罩 -->
+<div id="overlay">
+  <div class="overlay-box">
+    <div class="spinner"></div>
+    <div id="overlay-text">上傳中...</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- 動態 file inputs -->
+<div id="inputs"></div>
+
+<script>
+// ============================================================
+// ★ 填入以下設定後再部署 ★
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhF-X8KAscHycjSeilIgcLxZcz_fMiw5kmOgoVzrjaSF9ePDWolit4FL9ox157JosO/exec';
+const LIFF_ID = '2010531464-isLXOyw1';
+// ============================================================
+
+// ── 狀態 ──────────────────────────────────────────────────
+let me = null;
+let taskId = '', projectId = '', projectName = '', photoItems = [];
+let stations = [];
+let selectedStation = null;
+// photoState: { [item]: [{ driveUrl, filename, sent }] }
+let photoState = {};
+
+// ── 初始化 ────────────────────────────────────────────────
+async function init() {
+  try {
+    setText('loading-text', '初始化 LIFF...');
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    me = await liff.getProfile();
+
+    const p      = new URLSearchParams(location.search);
+    taskId       = p.get('taskId')      || '';
+    projectId    = p.get('projectId')   || '';
+    projectName  = decodeURIComponent(p.get('projectName') || '');
+    photoItems   = decodeURIComponent(p.get('items') || '').split(',').filter(Boolean);
+
+    photoItems.forEach(item => photoState[item] = []);
+
+    setText('loading-text', '載入點位資料...');
+    const res   = await fetch(`${GAS_URL}?action=getStations&projectId=${encodeURIComponent(projectId)}`);
+    const json  = await res.json();
+    stations    = json.data || [];
+
+    showStationScreen();
+  } catch (err) {
+    setText('loading-text', '載入失敗：' + err.message);
+  }
+}
+
+// ── 點位選擇畫面 ──────────────────────────────────────────
+function showStationScreen() {
+  show('screen-station'); hide('screen-loading'); hide('screen-photos');
+
+  setText('st-project', projectName);
+  setText('st-date', new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' }));
+
+  document.getElementById('station-grid').innerHTML = stations.map(s => `
+    <button class="station-btn" onclick='pickStation(${JSON.stringify(s)})'>
+      <div class="s-name">${s.name}</div>
+      ${s.location ? `<div class="s-loc">📍 ${s.location}</div>` : ''}
+      ${s.note     ? `<div class="s-note">⚠️ ${s.note}</div>`     : ''}
+    </button>
+  `).join('');
+}
+
+async function pickStation(station) {
+  selectedStation = station;
+
+  showOverlay('載入照片狀態...');
+  try {
+    // 重置狀態
+    photoItems.forEach(item => photoState[item] = []);
+
+    // 從 GAS 讀取已上傳照片
+    const res  = await fetch(`${GAS_URL}?action=getTaskStatus&taskId=${encodeURIComponent(taskId)}&stationId=${encodeURIComponent(station.stationId)}`);
+    const data = await res.json();
+    (data.photos || []).forEach(p => {
+      if (!photoState[p.photoItem]) photoState[p.photoItem] = [];
+      photoState[p.photoItem].push({
+        driveUrl: p.driveUrl,
+        filename: p.filename,
+        sent: p.sentToPM === true || p.sentToPM === 'TRUE'
+      });
+    });
+  } catch (e) { /* 繼續，狀態載入失敗不阻擋使用 */ }
+
+  hideOverlay();
+  hide('screen-loading'); hide('screen-station');
+  show('screen-photos');
+
+  setText('ph-station', station.name);
+  setText('ph-project', projectName);
+  renderPhotos();
+}
+
+// ── 照片清單渲染 ──────────────────────────────────────────
+function renderPhotos() {
+  const body = document.getElementById('photos-body');
+  body.innerHTML = photoItems.map(item => {
+    const photos = photoState[item] || [];
+    const hasSent   = photos.some(p => p.sent);
+    const hasUnsent = photos.some(p => !p.sent);
+    const count     = photos.length;
+
+    let badgeClass = 'badge-none', badgeText = '未拍攝';
+    if (count && hasSent && !hasUnsent) { badgeClass = 'badge-sent';   badgeText = '已通知 PM'; }
+    else if (count)                      { badgeClass = 'badge-unsent'; badgeText = '未通知 PM'; }
+
+    const thumbsHtml = photos.map((p, i) =>
+      `<img class="thumb" src="${p.driveUrl}" alt="${item}${i+1}" loading="lazy">`
+    ).join('');
+
+    const addBtnHtml = count < 5
+      ? `<button class="add-btn" onclick="triggerCamera('${item}')" aria-label="新增${item}照片">＋</button>`
+      : '';
+
+    let sendClass = 'send-disabled', sendText = '傳給 PM';
+    if (count && !hasUnsent)  { sendClass = 'send-sent';   sendText = '✓ 已傳送'; }
+    else if (hasUnsent)        { sendClass = 'send-active'; sendText = '傳給 PM'; }
+
+    return `
+      <div class="item-card">
+        <div class="item-head">
+          <div class="item-name">${item}</div>
+          <div class="item-badge ${badgeClass}">${badgeText}${count ? ' (' + count + '張)' : ''}</div>
+        </div>
+        <div class="thumb-row">${thumbsHtml}${addBtnHtml}</div>
+        <div class="item-actions">
+          <button class="send-btn ${sendClass}" onclick="notifySingle('${item}')">${sendText}</button>
+          ${count >= 5 ? '<span style="font-size:10px;color:#aaa">已達上限(5張)</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  updateProgress();
+  updateBulkBtns();
+}
+
+function updateProgress() {
+  const done  = photoItems.filter(i => (photoState[i] || []).length > 0).length;
+  const total = photoItems.length;
+  setText('ph-progress', `${done} / ${total} 項目已有照片`);
+}
+
+function updateBulkBtns() {
+  const hasAny    = photoItems.some(i => (photoState[i] || []).length > 0);
+  const hasUnsent = photoItems.some(i => (photoState[i] || []).some(p => !p.sent));
+  const unsentCnt = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent)).length;
+
+  const bu = document.getElementById('btn-unsent');
+  const ba = document.getElementById('btn-all');
+
+  bu.className = `bulk-btn bulk-unsent${hasUnsent ? '' : ' bulk-disabled'}`;
+  bu.textContent = hasUnsent ? `傳未送的 (${unsentCnt} 項) 給 PM` : '傳未送的給 PM';
+
+  ba.className = `bulk-btn bulk-all${hasAny ? '' : ' bulk-disabled'}`;
+}
+
+// ── 拍照 ─────────────────────────────────────────────────
+function triggerCamera(item) {
+  let input = document.getElementById('fi-' + item);
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.id = 'fi-' + item;
+    input.addEventListener('change', () => { if (input.files[0]) handleFile(item, input.files[0]); });
+    document.getElementById('inputs').appendChild(input);
+  }
+  input.value = '';
+  input.click();
+}
+
+async function handleFile(item, file) {
+  showOverlay(`上傳 ${item} 中...`);
+  try {
+    const base64  = await toBase64(file);
+    const idx     = (photoState[item] || []).length + 1;
+    // 檔名：點位ID_姓名_項目名_序號.jpg
+    const filename = `${selectedStation.stationId}_${me.displayName}_${item}_${idx}.jpg`;
+
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'uploadPhoto',
+        taskId, projectName,
+        stationId: selectedStation.stationId,
+        stationName: selectedStation.name,
+        photoItem: item, photoIndex: idx,
+        uploaderName: me.displayName,
+        base64, filename
+      })
+    });
+    const { ok, driveUrl, error } = await res.json();
+
+    if (ok) {
+      photoState[item].push({ driveUrl, filename, sent: false });
+      showToast(`${item} 上傳完成 ✓`);
+    } else {
+      showToast('上傳失敗：' + (error || '未知錯誤'));
+    }
+  } catch (err) {
+    showToast('上傳失敗：' + err.message);
+  }
+  hideOverlay();
+  renderPhotos();
+}
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── 通知 PM ──────────────────────────────────────────────
+// 重要：shareTargetPicker 必須在 user activation 內同步呼叫
+// 因此不在呼叫前使用任何 await
+
+function notifySingle(item) {
+  const unsent = (photoState[item] || []).filter(p => !p.sent);
+  if (!unsent.length) return;
+  _send([item]);
+}
+
+function notifyUnsent() {
+  const items = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent));
+  if (!items.length) return;
+  _send(items);
+}
+
+function notifyAll() {
+  const items = photoItems.filter(i => (photoState[i] || []).length > 0);
+  if (!items.length) return;
+  _send(items);
+}
+
+function _send(items) {
+  const flex = buildFlex(items);
+
+  // ★ shareTargetPicker 同步呼叫（保留 user activation）
+  const shareP = liff.shareTargetPicker([flex], { isMultiple: false });
+
+  // 同步發起 GAS mark 請求
+  const markP = Promise.all(items.map(item =>
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'markSentToPM',
+        taskId, stationId: selectedStation.stationId, photoItem: item
+      })
+    }).catch(() => {})
+  ));
+
+  // 等待兩者完成
+  Promise.all([shareP, markP])
+    .then(() => {
+      items.forEach(item => (photoState[item] || []).forEach(p => p.sent = true));
+      renderPhotos();
+      showToast('已傳送給 PM ✓');
+    })
+    .catch(() => showToast('已取消或發送失敗'));
+}
+
+// ── 建立 Flex Message ─────────────────────────────────────
+function buildFlex(items) {
+  const time    = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+  const bubbles = [];
+
+  // 摘要 bubble
+  const summaryRows = photoItems.map(item => {
+    const count = (photoState[item] || []).length;
+    const done  = count > 0;
+    return {
+      type: 'box', layout: 'horizontal', spacing: 'sm', margin: 'sm',
+      contents: [
+        { type: 'text', text: done ? '✓' : '－', color: done ? '#1DB954' : '#BBBBBB', flex: 0, size: 'sm', weight: done ? 'bold' : 'regular' },
+        { type: 'text', text: item + (done ? ` (${count}張)` : ''), color: done ? '#333333' : '#AAAAAA', size: 'sm', flex: 1 }
+      ]
+    };
+  });
+
+  bubbles.push({
+    type: 'bubble', size: 'kilo',
+    header: {
+      type: 'box', layout: 'vertical', backgroundColor: '#185FA5', paddingAll: '14px',
+      contents: [
+        { type: 'text', text: selectedStation.name, color: '#FFFFFF', weight: 'bold', size: 'md' },
+        { type: 'text', text: me.displayName + '　' + time, color: 'rgba(255,255,255,0.75)', size: 'xs', margin: 'xs' }
+      ]
+    },
+    body: {
+      type: 'box', layout: 'vertical', spacing: 'none',
+      contents: [
+        { type: 'text', text: '拍照任務', weight: 'bold', size: 'xs', color: '#888888', margin: 'none' },
+        ...summaryRows
+      ]
+    }
+  });
+
+  // 每個 item 一張照片 bubble（只傳本次選到的項目）
+  items.forEach(item => {
+    const photos = (photoState[item] || []).filter(p => p.driveUrl);
+    if (!photos.length) return;
+
+    bubbles.push({
+      type: 'bubble', size: 'kilo',
+      hero: {
+        type: 'image',
+        url: photos[0].driveUrl,
+        size: 'full', aspectRatio: '4:3', aspectMode: 'cover'
+      },
+      body: {
+        type: 'box', layout: 'vertical', paddingAll: '10px',
+        contents: [
+          { type: 'text', text: item, weight: 'bold', size: 'md' },
+          { type: 'text', text: selectedStation.name + (photos.length > 1 ? `　共 ${photos.length} 張` : ''), size: 'xs', color: '#888888', margin: 'xs' },
+          { type: 'text', text: me.displayName, size: 'xs', color: '#888888' }
+        ]
+      }
+    });
+  });
+
+  return {
+    type: 'flex',
+    altText: `【${selectedStation.name}】${items.join('、')} — ${me.displayName}`,
+    contents: bubbles.length === 1
+      ? bubbles[0]
+      : { type: 'carousel', contents: bubbles }
+  };
+}
+
+// ── 工具 ─────────────────────────────────────────────────
+function show(id)        { document.getElementById(id).style.display = id === 'screen-photos' ? 'flex' : ''; }
+function hide(id)        { document.getElementById(id).style.display = 'none'; }
+function setText(id, v)  { const el = document.getElementById(id); if (el) el.textContent = v; }
+function showOverlay(msg){ document.getElementById('overlay').style.display = 'flex'; setText('overlay-text', msg); }
+function hideOverlay()   { document.getElementById('overlay').style.display = 'none'; }
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 2200);
+}
+
+init();
+</script>
+</body>
+</html>

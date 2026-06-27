@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PM 發送任務</title>
+<script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f8f8; -webkit-tap-highlight-color: transparent; }
+
+/* ── 共用 ── */
+.header { background: #185FA5; color: #fff; padding: 48px 16px 14px; }
+.header-title { font-size: 18px; font-weight: 600; }
+.header-hint  { font-size: 11px; opacity: .8; margin-top: 3px; }
+.back-btn { background: none; border: none; color: rgba(255,255,255,.85); font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+
+.spinner { width: 36px; height: 36px; border: 3px solid #ddd; border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.section { padding: 14px 14px 0; }
+.section-label { font-size: 12px; font-weight: 600; color: #888; letter-spacing: .04em; margin-bottom: 8px; }
+
+/* ── 載入畫面 ── */
+#screen-loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100vh; gap: 12px;
+}
+#loading-text { font-size: 13px; color: #888; }
+
+/* ── 計畫選擇 ── */
+#screen-project { display: none; }
+.proj-btn {
+  display: flex; align-items: center; gap: 10px; background: #fff;
+  border: .5px solid #ddd; border-radius: 12px; padding: 12px 14px;
+  margin-bottom: 8px; cursor: pointer; width: 100%; text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.proj-btn:active { border-color: #185FA5; background: #EBF4FF; }
+.proj-dot  { width: 10px; height: 10px; border-radius: 50%; background: #185FA5; flex-shrink: 0; }
+.proj-name { font-size: 14px; font-weight: 600; color: #333; }
+.proj-desc { font-size: 11px; color: #888; margin-top: 2px; }
+
+/* ── 任務組合畫面 ── */
+#screen-compose { display: none; flex-direction: column; height: 100vh; }
+.compose-scroll { flex: 1; overflow-y: auto; padding-bottom: 70px; }
+
+/* 拍照項目清單 */
+.item-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; background: #fff;
+  border-bottom: .5px solid #f5f5f5; cursor: pointer;
+}
+.item-row:last-child { border-bottom: none; }
+.check-box {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 1.5px solid #ddd; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; flex-shrink: 0; transition: all .15s;
+}
+.check-box.on { background: #185FA5; border-color: #185FA5; color: #fff; }
+.item-label { font-size: 14px; color: #333; flex: 1; }
+.item-delete { background: none; border: none; color: #ddd; font-size: 18px; cursor: pointer; padding: 0 2px; }
+
+/* 新增自訂項目 */
+.add-row { display: flex; gap: 8px; padding: 10px 14px; background: #fff; border-top: .5px solid #f5f5f5; }
+.add-row input { flex: 1; height: 36px; border: .5px solid #ddd; border-radius: 8px; padding: 0 10px; font-size: 13px; }
+.add-row button { height: 36px; padding: 0 16px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+/* 模板快選 */
+.template-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 14px; background: #fff; border-bottom: .5px solid #f5f5f5; }
+.template-chip { font-size: 11px; padding: 4px 10px; border-radius: 14px; background: #EBF4FF; color: #185FA5; cursor: pointer; border: .5px solid #185FA5; white-space: nowrap; }
+.template-chip:active { background: #185FA5; color: #fff; }
+
+/* 備注輸入 */
+.note-input {
+  width: 100%; min-height: 56px; border: .5px solid #ddd; border-radius: 10px;
+  padding: 10px 12px; font-size: 13px; resize: none; font-family: inherit;
+  background: #fff;
+}
+
+/* 點位預覽 */
+.station-preview {
+  background: #fff; border-radius: 12px; overflow: hidden; margin-top: 2px;
+}
+.station-preview-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border-bottom: .5px solid #f5f5f5; font-size: 12px; color: #555;
+}
+.station-preview-row:last-child { border-bottom: none; }
+
+/* 卡片預覽 */
+.preview-card { background: #fff; border-radius: 14px; overflow: hidden; }
+.preview-header { background: #185FA5; padding: 12px 14px; }
+.preview-body { padding: 12px 14px; }
+.preview-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; margin-bottom: 5px; }
+.preview-item:last-child { margin-bottom: 0; }
+.preview-footer {
+  background: #185FA5; margin: 10px -14px -12px; padding: 10px 14px;
+  text-align: center; color: #fff; font-size: 12px; font-weight: 600;
+}
+
+/* ── 底部發送列 ── */
+.send-bar {
+  position: sticky; bottom: 0; background: #fff; border-top: .5px solid #eee;
+  padding: 10px 14px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+.send-btn {
+  width: 100%; height: 44px; background: #06C755; color: #fff;
+  border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.send-btn:disabled { background: #ddd; color: #aaa; pointer-events: none; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.75); color: #fff; font-size: 12px;
+  padding: 8px 18px; border-radius: 20px; display: none; z-index: 200; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- 載入畫面 -->
+<div id="screen-loading">
+  <div class="spinner"></div>
+  <div id="loading-text">載入中...</div>
+</div>
+
+<!-- 計畫選擇 -->
+<div id="screen-project">
+  <div class="header">
+    <div class="header-title">發送拍照任務</div>
+    <div class="header-hint">選擇監測計畫</div>
+  </div>
+  <div style="padding:14px">
+    <div class="section-label">計畫清單</div>
+    <div id="project-list"></div>
+  </div>
+</div>
+
+<!-- 任務組合 -->
+<div id="screen-compose">
+  <div class="header">
+    <button class="back-btn" onclick="showProjectScreen()">← 返回計畫</button>
+    <div class="header-title" id="c-project-name"></div>
+    <div class="header-hint" id="c-date"></div>
+  </div>
+
+  <div class="compose-scroll">
+
+    <!-- 模板快選 -->
+    <div class="section" style="padding-top:12px">
+      <div class="section-label">常用模板</div>
+      <div style="background:#fff;border-radius:12px;overflow:hidden">
+        <div class="template-chips" id="template-chips"></div>
+      </div>
+    </div>
+
+    <!-- 拍照項目 -->
+    <div class="section" style="padding-top:12px">
+      <div class="section-label">拍照項目</div>
+      <div style="background:#fff;border-radius:12px;overflow:hidden">
+        <div id="items-list"></div>
+        <div class="add-row">
+          <input type="text" id="custom-input" placeholder="新增項目名稱" />
+          <button onclick="addCustomItem()">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 點位清單（說明用） -->
+    <div class="section" style="padding-top:12px">
+      <div class="section-label">計畫點位（現場人員開啟後自行選擇）</div>
+      <div class="station-preview" id="station-preview"></div>
+    </div>
+
+    <!-- 備注 -->
+    <div class="section" style="padding-top:12px">
+      <div class="section-label">備注（選填）</div>
+      <textarea class="note-input" id="task-note" placeholder="例：攜帶採水桶、確認採樣瓶數量" oninput="updatePreview()"></textarea>
+    </div>
+
+    <!-- 卡片預覽 -->
+    <div class="section" style="padding-top:12px;padding-bottom:14px">
+      <div class="section-label">發送卡片預覽</div>
+      <div class="preview-card">
+        <div class="preview-header">
+          <div style="color:rgba(255,255,255,.75);font-size:11px" id="prev-proj"></div>
+          <div style="color:#fff;font-size:15px;font-weight:600;margin-top:2px">拍照任務通知</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px" id="prev-date"></div>
+        </div>
+        <div class="preview-body">
+          <div id="prev-items" style="margin-bottom:8px"></div>
+          <div id="prev-note" style="display:none;font-size:11px;color:#888;padding-top:8px;border-top:.5px solid #eee;margin-top:8px"></div>
+          <div class="preview-footer">開始拍照 →</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end scroll -->
+
+  <div class="send-bar">
+    <button class="send-btn" id="send-btn" onclick="sendTask()" disabled>
+      選擇發送對象 →
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// ★ 填入以下設定後再部署 ★
+// ============================================================
+const GAS_URL          = 'https://script.google.com/macros/s/AKfycbwhF-X8KAscHycjSeilIgcLxZcz_fMiw5kmOgoVzrjaSF9ePDWolit4FL9ox157JosO/exec';
+const PM_LIFF_ID       = '2010531464-B8rVB6zr';
+const WORKER_LIFF_ID   = '2010531464-isLXOyw1';
+const GITHUB_PAGES_URL = 'https://z4p5b5z95r-crypto.github.io/env-monitor'; // GitHub Pages 網址
+// ============================================================
+
+// ── 狀態 ──────────────────────────────────────────────────
+let me = null;
+let projects = [], selectedProject = null;
+let templates = [], stations = [];
+let allItems = [];      // 所有可選項目（模板 + 自訂）
+let checkedItems = [];  // 已勾選的項目
+
+// ── 初始化 ────────────────────────────────────────────────
+async function init() {
+  try {
+    setText('loading-text', '初始化 LIFF...');
+    await liff.init({ liffId: PM_LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    me = await liff.getProfile();
+
+    setText('loading-text', '載入計畫...');
+    const res  = await fetch(`${GAS_URL}?action=getProjects`);
+    const json = await res.json();
+    projects   = json.data || [];
+
+    showProjectScreen();
+  } catch (err) {
+    setText('loading-text', '載入失敗：' + err.message);
+  }
+}
+
+// ── 計畫選擇畫面 ──────────────────────────────────────────
+function showProjectScreen() {
+  show('screen-project'); hide('screen-loading'); hide('screen-compose');
+  document.getElementById('project-list').innerHTML = projects.map(p => `
+    <div class="proj-btn" onclick='selectProject(${JSON.stringify(p)})'>
+      <div class="proj-dot"></div>
+      <div>
+        <div class="proj-name">${p.name}</div>
+        ${p.description ? `<div class="proj-desc">${p.description}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function selectProject(project) {
+  selectedProject = project;
+
+  // 載入模板 & 點位
+  try {
+    const [tRes, sRes] = await Promise.all([
+      fetch(`${GAS_URL}?action=getTemplates&projectId=${project.projectId}`),
+      fetch(`${GAS_URL}?action=getStations&projectId=${project.projectId}`)
+    ]);
+    templates = (await tRes.json()).data || [];
+    stations  = (await sRes.json()).data || [];
+  } catch (e) { templates = []; stations = []; }
+
+  // 從模板取出拍照項目
+  const photoTpl = templates.find(t => t.category === '拍照任務');
+  allItems     = photoTpl ? photoTpl.photoItems.split(',').map(s => s.trim()).filter(Boolean) : [];
+  checkedItems = [...allItems];
+
+  hide('screen-project');
+  show('screen-compose');
+  renderComposeScreen();
+}
+
+// ── 組合畫面 ─────────────────────────────────────────────
+function renderComposeScreen() {
+  const dateStr = new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+  setText('c-project-name', selectedProject.name);
+  setText('c-date', dateStr);
+
+  renderTemplateChips();
+  renderItemsList();
+  renderStationPreview();
+  updatePreview();
+}
+
+function renderTemplateChips() {
+  const chips = document.getElementById('template-chips');
+  const photoTemplates = templates.filter(t => t.category === '拍照任務' && t.photoItems);
+  if (!photoTemplates.length) { chips.parentElement.style.display = 'none'; return; }
+
+  chips.innerHTML = photoTemplates.map(t => `
+    <div class="template-chip" onclick="applyTemplate('${t.photoItems}')">
+      ${t.templateId ? t.templateId + '：' : ''}${t.photoItems}
+    </div>
+  `).join('') + `<div class="template-chip" onclick="checkAll()">全選</div>
+    <div class="template-chip" onclick="uncheckAll()">清空</div>`;
+}
+
+function applyTemplate(photoItemsStr) {
+  const items = photoItemsStr.split(',').map(s => s.trim()).filter(Boolean);
+  items.forEach(item => { if (!allItems.includes(item)) allItems.push(item); });
+  checkedItems = [...items];
+  renderItemsList();
+  updatePreview();
+}
+
+function checkAll()   { checkedItems = [...allItems]; renderItemsList(); updatePreview(); }
+function uncheckAll() { checkedItems = [];            renderItemsList(); updatePreview(); }
+
+function renderItemsList() {
+  document.getElementById('items-list').innerHTML = allItems.map(item => `
+    <div class="item-row" onclick="toggleItem('${item}')">
+      <div class="check-box ${checkedItems.includes(item) ? 'on' : ''}">
+        ${checkedItems.includes(item) ? '✓' : ''}
+      </div>
+      <div class="item-label">${item}</div>
+      <button class="item-delete" onclick="event.stopPropagation();deleteItem('${item}')">×</button>
+    </div>
+  `).join('');
+}
+
+function toggleItem(item) {
+  const idx = checkedItems.indexOf(item);
+  idx > -1 ? checkedItems.splice(idx, 1) : checkedItems.push(item);
+  renderItemsList();
+  updatePreview();
+}
+
+function deleteItem(item) {
+  allItems    = allItems.filter(i => i !== item);
+  checkedItems = checkedItems.filter(i => i !== item);
+  renderItemsList();
+  updatePreview();
+}
+
+function addCustomItem() {
+  const input = document.getElementById('custom-input');
+  const val   = input.value.trim();
+  if (!val) return;
+  if (!allItems.includes(val)) {
+    allItems.push(val);
+    checkedItems.push(val);
+  }
+  input.value = '';
+  renderItemsList();
+  updatePreview();
+}
+
+function renderStationPreview() {
+  const el = document.getElementById('station-preview');
+  if (!stations.length) { el.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#aaa">尚未設定點位，請先在 Sheets stations 工作表新增</div>'; return; }
+  el.innerHTML = stations.map(s => `
+    <div class="station-preview-row">
+      <span style="font-weight:600;color:#333;min-width:60px">${s.name}</span>
+      <span style="color:#888">${s.location || ''}</span>
+      ${s.note ? `<span style="color:#D97706;margin-left:auto;font-size:10px">⚠️ ${s.note}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function updatePreview() {
+  const itemsEl = document.getElementById('prev-items');
+  itemsEl.innerHTML = checkedItems.length
+    ? checkedItems.map(item => `<div class="preview-item"><span style="color:#185FA5">📷</span>${item}</div>`).join('')
+    : '<div style="color:#aaa;font-size:12px">請勾選至少一個拍照項目</div>';
+
+  const note   = document.getElementById('task-note').value.trim();
+  const noteEl = document.getElementById('prev-note');
+  if (note) { noteEl.style.display = 'block'; noteEl.textContent = '備注：' + note; }
+  else       { noteEl.style.display = 'none'; }
+
+  setText('prev-proj', selectedProject ? selectedProject.name : '');
+  setText('prev-date', new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' }));
+
+  document.getElementById('send-btn').disabled = checkedItems.length === 0;
+}
+
+// ── 發送任務 ─────────────────────────────────────────────
+// ★ shareTargetPicker 在 onclick 觸發後必須同步呼叫（user activation）
+function sendTask() {
+  // 產生 taskId：projectId-YYYYMMDD
+  const d = new Date();
+  const dateKey = d.getFullYear().toString()
+    + String(d.getMonth() + 1).padStart(2, '0')
+    + String(d.getDate()).padStart(2, '0');
+  const taskId = `${selectedProject.projectId}-${dateKey}`;
+
+  // 組合 worker LIFF URL（現場人員點卡片上的按鈕會開這個連結）
+  const workerUrl = `${GITHUB_PAGES_URL}/worker.html`
+    + `?taskId=${encodeURIComponent(taskId)}`
+    + `&projectId=${encodeURIComponent(selectedProject.projectId)}`
+    + `&projectName=${encodeURIComponent(selectedProject.name)}`
+    + `&items=${encodeURIComponent(checkedItems.join(','))}`;
+
+  const note    = document.getElementById('task-note').value.trim();
+  const dateStr = d.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
+
+  // 組合 Flex Message
+  const flex = {
+    type: 'flex',
+    altText: `【任務通知】${selectedProject.name} — ${dateStr}`,
+    contents: {
+      type: 'bubble',
+      header: {
+        type: 'box', layout: 'vertical', backgroundColor: '#185FA5', paddingAll: '16px',
+        contents: [
+          { type: 'text', text: selectedProject.name, color: 'rgba(255,255,255,0.75)', size: 'xs' },
+          { type: 'text', text: '拍照任務通知', color: '#FFFFFF', weight: 'bold', size: 'lg', margin: 'xs' },
+          { type: 'text', text: `${dateStr}　發送：${me.displayName}`, color: 'rgba(255,255,255,0.75)', size: 'xs', margin: 'xs' }
+        ]
+      },
+      body: {
+        type: 'box', layout: 'vertical', spacing: 'sm',
+        contents: [
+          { type: 'text', text: '拍照項目', weight: 'bold', size: 'sm', color: '#888888' },
+          ...checkedItems.map(item => ({
+            type: 'box', layout: 'horizontal', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '📷', flex: 0, size: 'sm' },
+              { type: 'text', text: item, size: 'sm', color: '#333333', flex: 1 }
+            ]
+          })),
+          ...(note ? [
+            { type: 'separator', margin: 'md' },
+            { type: 'text', text: note, size: 'xs', color: '#888888', wrap: true, margin: 'md' }
+          ] : [])
+        ]
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '10px',
+        contents: [{
+          type: 'button',
+          action: { type: 'uri', label: '開始拍照', uri: workerUrl },
+          style: 'primary', color: '#185FA5', height: 'sm'
+        }]
+      }
+    }
+  };
+
+  // ★ shareTargetPicker 同步呼叫（保留 user activation）
+  const shareP = liff.shareTargetPicker([flex], { isMultiple: false });
+
+  // 同步發起 GAS 記錄（非關鍵，失敗不影響發送）
+  const recordP = fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'createTask',
+      taskId, projectId: selectedProject.projectId,
+      assignedTo: '', assignedBy: me.displayName
+    })
+  }).catch(() => {});
+
+  Promise.all([shareP, recordP])
+    .then(() => showToast('任務已發送 ✓'))
+    .catch(() => showToast('已取消'));
+}
+
+// ── 工具 ─────────────────────────────────────────────────
+function show(id)       { document.getElementById(id).style.display = id === 'screen-compose' ? 'flex' : ''; }
+function hide(id)       { document.getElementById(id).style.display = 'none'; }
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 2200);
+}
+
+init();
+</script>
+</body>
+</html>
