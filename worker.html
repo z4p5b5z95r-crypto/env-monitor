@@ -7,121 +7,99 @@
 <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f8f8; -webkit-tap-highlight-color: transparent; }
-
-/* ── 共用 ── */
-.header { background: #185FA5; color: #fff; padding: 48px 16px 14px; }
-.header-sub   { font-size: 11px; opacity: .75; margin-bottom: 2px; }
-.header-title { font-size: 18px; font-weight: 600; }
-.header-hint  { font-size: 11px; opacity: .8; margin-top: 3px; }
-.back-btn { background: none; border: none; color: rgba(255,255,255,.85); font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f6f9; -webkit-tap-highlight-color: transparent; }
 
 .spinner { width: 36px; height: 36px; border: 3px solid #ddd; border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── 載入畫面 ── */
-#screen-loading {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; height: 100vh; gap: 12px;
-}
+/* ── 載入 ── */
+#screen-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 12px; }
 #loading-text { font-size: 13px; color: #888; }
 
 /* ── 點位選擇 ── */
 #screen-station { display: none; }
-.section-wrap { padding: 14px; }
-.section-label { font-size: 12px; font-weight: 600; color: #888; letter-spacing: .04em; margin-bottom: 10px; }
-.station-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.station-btn {
-  background: #fff; border: .5px solid #ddd; border-radius: 12px;
-  padding: 14px 12px; text-align: left; cursor: pointer; width: 100%;
-  transition: border-color .15s, background .15s;
-}
-.station-btn:active { border-color: #185FA5; background: #EBF4FF; }
-.s-name { font-size: 13px; font-weight: 600; color: #333; }
-.s-loc  { font-size: 11px; color: #888; margin-top: 3px; }
-.s-note { font-size: 10px; color: #D97706; margin-top: 3px; }
+.st-header { background: #185FA5; color: #fff; padding: 48px 18px 18px; }
+.st-htop   { font-size: 11px; color: #FFFFFFBF; margin-bottom: 4px; }
+.st-title  { font-size: 20px; font-weight: 700; }
+.st-hint   { font-size: 12px; color: #FFFFFFBF; margin-top: 4px; }
+.st-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+.st-btn    { background: #fff; border: 0.5px solid #ddd; border-radius: 14px; padding: 18px 14px; text-align: left; cursor: pointer; }
+.st-btn:active { background: #EBF4FF; border-color: #185FA5; }
+.st-name   { font-size: 14px; font-weight: 700; color: #222; }
+.st-loc    { font-size: 11px; color: #888; margin-top: 4px; }
+.st-note   { font-size: 10px; color: #D97706; margin-top: 3px; }
 
-/* ── 照片清單 ── */
-#screen-photos { display: none; flex-direction: column; height: 100vh; }
-.photos-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+/* ── 拍照畫面 ── */
+#screen-photo { display: none; flex-direction: column; height: 100vh; }
 
-.item-card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-.item-head { display: flex; align-items: center; gap: 8px; padding: 11px 14px 0; }
-.item-name { font-size: 14px; font-weight: 700; color: #222; flex: 1; }
-.item-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
-.badge-none   { background: #f0f0f0; color: #aaa; }
-.badge-unsent { background: #FFF8E1; color: #B45309; }
-.badge-sent   { background: #E8F5E9; color: #1D9E75; }
+.ph-header { background: #185FA5; color: #fff; padding: 44px 18px 14px; flex-shrink: 0; }
+.ph-back   { background: none; border: none; color: #FFFFFFBF; font-size: 12px; cursor: pointer; margin-bottom: 6px; padding: 0; }
+.ph-station { font-size: 11px; color: #FFFFFFBF; }
+.ph-name   { font-size: 20px; font-weight: 700; color: #fff; margin: 2px 0; }
+.ph-sub    { font-size: 11px; color: #FFFFFFBF; }
+
+/* 進度點 */
+.dots-row { display: flex; gap: 6px; justify-content: center; align-items: center; padding: 14px 0 8px; flex-shrink: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #dde3ee; transition: all .2s; }
+.dot.active { background: #185FA5; transform: scale(1.3); }
+.dot.done   { background: #06C755; }
+
+/* 中間拍照區 */
+.photo-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 20px; gap: 14px; overflow-y: auto; }
 
 /* 大拍照按鈕 */
-.cam-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin: 10px 14px; padding: 14px;
+.cam-big-btn {
+  width: 100%; max-width: 340px;
   background: #185FA5; color: #fff;
-  border: none; border-radius: 10px; cursor: pointer;
-  font-size: 15px; font-weight: 700; width: calc(100% - 28px);
+  border: none; border-radius: 18px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 30px 20px;
   transition: opacity .15s;
 }
-.cam-btn:active { opacity: .8; }
-.cam-btn.has-photos { background: #1450a0; }
-.cam-btn.maxed { background: #ddd; color: #aaa; pointer-events: none; }
+.cam-big-btn:active { opacity: .8; }
+.cam-big-btn.has-photo { background: #1450a0; padding: 18px 20px; }
+.cam-big-btn.maxed    { background: #ccc; pointer-events: none; }
+.cam-icon { font-size: 44px; line-height: 1; }
+.cam-icon.small { font-size: 28px; }
+.cam-text { font-size: 18px; font-weight: 700; }
+.cam-text.small { font-size: 14px; }
+.cam-sub  { font-size: 12px; color: rgba(255,255,255,.8); }
 
-/* 縮圖列 */
-.thumb-row { padding: 0 14px 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-.thumb { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: .5px solid #ddd; }
+/* 縮圖 */
+.thumbs-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 340px; }
+.thumb { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; border: .5px solid #ddd; }
 
-.item-actions { border-top: .5px solid #f5f5f5; padding: 8px 14px; display: flex; gap: 8px; align-items: center; }
-.send-btn {
-  height: 32px; padding: 0 16px; border-radius: 8px; border: none; cursor: pointer;
-  font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
-  transition: all .15s;
+/* 傳給PM按鈕（當項目有照片時出現） */
+.send-item-btn {
+  width: 100%; max-width: 340px;
+  height: 42px; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;
 }
-.send-active   { background: #06C755; color: #fff; }
-.send-sent     { background: #E8F5E9; color: #1D9E75; pointer-events: none; }
-.send-disabled { background: #f0f0f0; color: #ccc; pointer-events: none; }
+.send-item-active { background: #06C755; color: #fff; }
+.send-item-sent   { background: #E8F5E9; color: #1D9E75; pointer-events: none; }
+.send-item-hide   { display: none; }
 
-/* ── 底部按鈕列 ── */
-.bottom-bar {
-  background: #fff; border-top: .5px solid #eee;
-  padding: 10px 12px; display: flex; gap: 8px; flex-shrink: 0;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-}
-.bulk-btn {
-  flex: 1; height: 40px; border-radius: 10px; border: none; cursor: pointer;
-  font-size: 12px; font-weight: 600; display: flex; align-items: center;
-  justify-content: center; gap: 4px; transition: opacity .15s;
-}
-.bulk-unsent  { background: #E6F1FB; color: #185FA5; border: .5px solid #185FA5; }
-.bulk-all     { background: #06C755; color: #fff; }
-.bulk-disabled { opacity: .4; pointer-events: none; }
+/* 底部導覽 */
+.ph-nav { display: flex; gap: 10px; padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom)); background: #fff; border-top: 0.5px solid #eee; flex-shrink: 0; }
+.nav-prev { flex: 0 0 80px; height: 46px; background: none; border: 0.5px solid #ddd; border-radius: 12px; color: #888; font-size: 14px; cursor: pointer; }
+.nav-next { flex: 1; height: 46px; background: #185FA5; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.nav-next.last { background: #06C755; }
+.nav-next:disabled { background: #e0e0e0; color: #bbb; }
 
-/* ── 上傳遮罩 ── */
-#overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.55);
-  display: none; align-items: center; justify-content: center; z-index: 100;
-}
-.overlay-box {
-  background: #fff; border-radius: 16px; padding: 24px 28px;
-  text-align: center; min-width: 180px;
-}
+/* 送出覆蓋層 */
+#overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 100; }
+.overlay-box { background: #fff; border-radius: 16px; padding: 24px 28px; text-align: center; min-width: 180px; }
 .overlay-box .spinner { margin: 0 auto; }
 #overlay-text { font-size: 13px; color: #555; margin-top: 12px; }
 
-/* ── Toast ── */
-#toast {
-  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,.75); color: #fff; font-size: 12px;
-  padding: 8px 18px; border-radius: 20px; display: none; z-index: 200;
-  white-space: nowrap; pointer-events: none;
-}
+/* Toast */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.78); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 22px; display: none; z-index: 200; white-space: nowrap; pointer-events: none; }
 
-/* 隱藏的 file input 容器 */
+/* file input 隱藏容器 */
 #inputs { display: none; }
 </style>
 </head>
 <body>
 
-<!-- 載入畫面 -->
 <div id="screen-loading">
   <div class="spinner"></div>
   <div id="loading-text">初始化中...</div>
@@ -129,61 +107,58 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 
 <!-- 點位選擇 -->
 <div id="screen-station">
-  <div class="header">
-    <div class="header-sub" id="st-project"></div>
-    <div class="header-title">選擇監測點位</div>
-    <div class="header-hint" id="st-date"></div>
+  <div class="st-header">
+    <div class="st-htop" id="st-project"></div>
+    <div class="st-title">選擇監測點位</div>
+    <div class="st-hint" id="st-date"></div>
   </div>
-  <div class="section-wrap">
-    <div class="section-label">今日點位</div>
-    <div class="station-grid" id="station-grid"></div>
+  <div class="st-grid" id="station-grid"></div>
+</div>
+
+<!-- 拍照畫面 -->
+<div id="screen-photo">
+  <div class="ph-header">
+    <button class="ph-back" onclick="showStationScreen()">← 切換點位</button>
+    <div class="ph-station" id="ph-station-name"></div>
+    <div class="ph-name"    id="ph-item-name"></div>
+    <div class="ph-sub"     id="ph-progress"></div>
+  </div>
+
+  <div class="dots-row" id="dots-row"></div>
+
+  <div class="photo-area">
+    <button class="cam-big-btn" id="cam-btn" onclick="triggerCamera()">
+      <div class="cam-icon" id="cam-icon">📷</div>
+      <div class="cam-text" id="cam-text">拍照</div>
+      <div class="cam-sub"  id="cam-sub" style="display:none"></div>
+    </button>
+
+    <div class="thumbs-row" id="thumbs-row"></div>
+
+    <button class="send-item-btn send-item-hide" id="send-item-btn" onclick="sendCurrentItem()">
+      傳給 PM
+    </button>
+  </div>
+
+  <div class="ph-nav">
+    <button class="nav-prev" id="nav-prev" onclick="goPrev()">← 上一項</button>
+    <button class="nav-next" id="nav-next" onclick="goNext()">下一項 →</button>
   </div>
 </div>
 
-<!-- 照片清單 -->
-<div id="screen-photos">
-  <div class="header">
-    <button class="back-btn" onclick="showStationScreen()">← 切換點位</button>
-    <div class="header-sub" id="ph-station"></div>
-    <div class="header-title" id="ph-project"></div>
-    <div class="header-hint" id="ph-progress"></div>
-  </div>
-  <div class="photos-body" id="photos-body"></div>
-  <div class="bottom-bar">
-    <button class="bulk-btn bulk-unsent bulk-disabled" id="btn-unsent" onclick="notifyUnsent()">傳未送的給 PM</button>
-    <button class="bulk-btn bulk-all bulk-disabled"   id="btn-all"    onclick="notifyAll()">全部傳給 PM</button>
-  </div>
-</div>
-
-<!-- 上傳遮罩 -->
-<div id="overlay">
-  <div class="overlay-box">
-    <div class="spinner"></div>
-    <div id="overlay-text">上傳中...</div>
-  </div>
-</div>
-
-<!-- Toast -->
+<div id="overlay"><div class="overlay-box"><div class="spinner"></div><div id="overlay-text">上傳中...</div></div></div>
 <div id="toast"></div>
-
-<!-- 動態 file inputs -->
 <div id="inputs"></div>
 
 <script>
-// ============================================================
-// ★ 填入以下設定後再部署 ★
-// ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhF-X8KAscHycjSeilIgcLxZcz_fMiw5kmOgoVzrjaSF9ePDWolit4FL9ox157JosO/exec';
 const LIFF_ID = '2010531464-B8rVB6zr';
-// ============================================================
 
-// ── 狀態 ──────────────────────────────────────────────────
 let me = null;
 let taskId = '', projectId = '', projectName = '', photoItems = [];
-let stations = [];
-let selectedStation = null;
-// photoState: { [item]: [{ driveUrl, filename, sent }] }
-let photoState = {};
+let stations = [], selectedStation = null;
+let photoState = {}; // { item: [{ driveUrl, sent }] }
+let currentIdx = 0;
 
 // ── 初始化 ────────────────────────────────────────────────
 async function init() {
@@ -191,142 +166,152 @@ async function init() {
     setText('loading-text', '初始化 LIFF...');
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
-
     me = await liff.getProfile();
 
-    const p      = new URLSearchParams(location.search);
-    taskId       = p.get('taskId')      || '';
-    projectId    = p.get('projectId')   || '';
-    projectName  = decodeURIComponent(p.get('projectName') || '');
-    photoItems   = decodeURIComponent(p.get('items') || '').split(',').filter(Boolean);
-
+    const p     = new URLSearchParams(location.search);
+    taskId      = p.get('taskId')      || '';
+    projectId   = p.get('projectId')   || '';
+    projectName = decodeURIComponent(p.get('projectName') || '');
+    photoItems  = decodeURIComponent(p.get('items') || '').split(',').filter(Boolean);
     photoItems.forEach(item => photoState[item] = []);
 
-    setText('loading-text', '載入點位資料...');
-    const res   = await fetch(`${GAS_URL}?action=getStations&projectId=${encodeURIComponent(projectId)}`);
-    const json  = await res.json();
-    stations    = json.data || [];
-
+    setText('loading-text', '載入點位...');
+    const res  = await fetch(`${GAS_URL}?action=getStations&projectId=${encodeURIComponent(projectId)}`);
+    stations   = (await res.json()).data || [];
     showStationScreen();
   } catch (err) {
     setText('loading-text', '載入失敗：' + err.message);
   }
 }
 
-// ── 點位選擇畫面 ──────────────────────────────────────────
+// ── 點位選擇 ──────────────────────────────────────────────
 function showStationScreen() {
-  show('screen-station'); hide('screen-loading'); hide('screen-photos');
-
+  document.getElementById('screen-station').style.display = 'block';
+  document.getElementById('screen-photo').style.display   = 'none';
+  document.getElementById('screen-loading').style.display = 'none';
   setText('st-project', projectName);
   setText('st-date', new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' }));
-
   document.getElementById('station-grid').innerHTML = stations.map(s => `
-    <button class="station-btn" onclick='pickStation(${JSON.stringify(s)})'>
-      <div class="s-name">${s.name}</div>
-      ${s.location ? `<div class="s-loc">📍 ${s.location}</div>` : ''}
-      ${s.note     ? `<div class="s-note">⚠️ ${s.note}</div>`     : ''}
-    </button>
-  `).join('');
+    <button class="st-btn" onclick='pickStation(${JSON.stringify(s)})'>
+      <div class="st-name">${s.name}</div>
+      ${s.location ? `<div class="st-loc">📍 ${s.location}</div>` : ''}
+      ${s.note     ? `<div class="st-note">⚠️ ${s.note}</div>`     : ''}
+    </button>`).join('');
 }
 
 async function pickStation(station) {
   selectedStation = station;
-
   showOverlay('載入照片狀態...');
+  photoItems.forEach(item => photoState[item] = []);
   try {
-    // 重置狀態
-    photoItems.forEach(item => photoState[item] = []);
-
-    // 從 GAS 讀取已上傳照片
     const res  = await fetch(`${GAS_URL}?action=getTaskStatus&taskId=${encodeURIComponent(taskId)}&stationId=${encodeURIComponent(station.stationId)}`);
     const data = await res.json();
     (data.photos || []).forEach(p => {
       if (!photoState[p.photoItem]) photoState[p.photoItem] = [];
-      photoState[p.photoItem].push({
-        driveUrl: p.driveUrl,
-        filename: p.filename,
-        sent: p.sentToPM === true || p.sentToPM === 'TRUE'
-      });
+      photoState[p.photoItem].push({ driveUrl: p.driveUrl, sent: p.sentToPM === true || p.sentToPM === 'TRUE' });
     });
-  } catch (e) { /* 繼續，狀態載入失敗不阻擋使用 */ }
-
+  } catch (e) {}
   hideOverlay();
-  hide('screen-loading'); hide('screen-station');
-  show('screen-photos');
-
-  setText('ph-station', station.name);
-  setText('ph-project', projectName);
-  renderPhotos();
+  currentIdx = 0;
+  showPhotoScreen();
 }
 
-// ── 照片清單渲染 ──────────────────────────────────────────
-function renderPhotos() {
-  const body = document.getElementById('photos-body');
-  body.innerHTML = photoItems.map(item => {
-    const photos = photoState[item] || [];
-    const hasSent   = photos.some(p => p.sent);
-    const hasUnsent = photos.some(p => !p.sent);
-    const count     = photos.length;
+// ── 拍照畫面 ──────────────────────────────────────────────
+function showPhotoScreen() {
+  document.getElementById('screen-station').style.display = 'none';
+  document.getElementById('screen-photo').style.display   = 'flex';
+  renderPhotoItem();
+}
 
-    let badgeClass = 'badge-none', badgeText = '未拍攝';
-    if (count && hasSent && !hasUnsent) { badgeClass = 'badge-sent';   badgeText = '已通知 PM'; }
-    else if (count)                      { badgeClass = 'badge-unsent'; badgeText = '未通知 PM'; }
+function renderPhotoItem() {
+  const item   = photoItems[currentIdx];
+  const photos = photoState[item] || [];
+  const count  = photos.length;
+  const hasSent   = photos.some(p => p.sent);
+  const hasUnsent = photos.some(p => !p.sent);
 
-    const thumbsHtml = photos.map((p, i) =>
-      `<img class="thumb" src="${p.driveUrl}" alt="${item}${i+1}" loading="lazy">`
-    ).join('');
+  setText('ph-station-name', selectedStation.name);
+  setText('ph-item-name',    item);
+  setText('ph-progress',     `${currentIdx + 1} / ${photoItems.length} 項目`);
 
-    const camClass = count >= 5 ? 'maxed' : (count > 0 ? 'has-photos' : '');
-    const camLabel = count >= 5 ? '已達上限 5 張'
-                   : count > 0  ? `📷 繼續拍照（已拍 ${count} 張）`
-                   :               '📷 拍照';
-    const camBtn = `<button class="cam-btn ${camClass}" onclick="triggerCamera('${item}')">${camLabel}</button>`;
-
-    let sendClass = 'send-disabled', sendText = '傳給 PM';
-    if (count && !hasUnsent)  { sendClass = 'send-sent';   sendText = '✓ 已傳送'; }
-    else if (hasUnsent)        { sendClass = 'send-active'; sendText = '傳給 PM'; }
-
-    return `
-      <div class="item-card">
-        <div class="item-head">
-          <div class="item-name">${item}</div>
-          <div class="item-badge ${badgeClass}">${badgeText}</div>
-        </div>
-        ${camBtn}
-        ${thumbsHtml ? `<div class="thumb-row">${thumbsHtml}</div>` : ''}
-        <div class="item-actions">
-          <button class="send-btn ${sendClass}" onclick="notifySingle('${item}')">${sendText}</button>
-        </div>
-      </div>
-    `;
+  // 進度點
+  document.getElementById('dots-row').innerHTML = photoItems.map((_, i) => {
+    const cls = i === currentIdx ? 'active' : ((photoState[photoItems[i]] || []).length > 0 ? 'done' : '');
+    return `<div class="dot ${cls}"></div>`;
   }).join('');
 
-  updateProgress();
-  updateBulkBtns();
+  // 大拍照按鈕
+  const btn  = document.getElementById('cam-btn');
+  const icon = document.getElementById('cam-icon');
+  const text = document.getElementById('cam-text');
+  const sub  = document.getElementById('cam-sub');
+  if (count >= 5) {
+    btn.className  = 'cam-big-btn maxed';
+    icon.className = 'cam-icon small'; icon.textContent = '📷';
+    text.className = 'cam-text small'; text.textContent = '已達上限 5 張';
+    sub.style.display = 'none';
+  } else if (count > 0) {
+    btn.className  = 'cam-big-btn has-photo';
+    icon.className = 'cam-icon small'; icon.textContent = '📷';
+    text.className = 'cam-text small'; text.textContent = `繼續拍照`;
+    sub.style.display = 'block'; sub.textContent = `已拍 ${count} 張`;
+  } else {
+    btn.className  = 'cam-big-btn';
+    icon.className = 'cam-icon'; icon.textContent = '📷';
+    text.className = 'cam-text'; text.textContent = '拍照';
+    sub.style.display = 'none';
+  }
+
+  // 縮圖
+  document.getElementById('thumbs-row').innerHTML =
+    photos.map(p => `<img class="thumb" src="${p.driveUrl}" loading="lazy">`).join('');
+
+  // 傳給PM按鈕
+  const sendBtn = document.getElementById('send-item-btn');
+  if (!count) {
+    sendBtn.className = 'send-item-btn send-item-hide';
+  } else if (hasSent && !hasUnsent) {
+    sendBtn.className = 'send-item-btn send-item-sent';
+    sendBtn.textContent = '✓ 已傳送給 PM';
+  } else {
+    sendBtn.className = 'send-item-btn send-item-active';
+    sendBtn.textContent = '傳給 PM';
+  }
+
+  // 底部導覽
+  const prevBtn = document.getElementById('nav-prev');
+  const nextBtn = document.getElementById('nav-next');
+  prevBtn.style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+  if (currentIdx === photoItems.length - 1) {
+    nextBtn.textContent = '全部傳給 PM ✓';
+    nextBtn.className   = 'nav-next last';
+    nextBtn.disabled    = !photoItems.some(i => (photoState[i] || []).length > 0);
+  } else {
+    nextBtn.textContent = '下一項 →';
+    nextBtn.className   = 'nav-next';
+    nextBtn.disabled    = false;
+  }
 }
 
-function updateProgress() {
-  const done  = photoItems.filter(i => (photoState[i] || []).length > 0).length;
-  const total = photoItems.length;
-  setText('ph-progress', `${done} / ${total} 項目已有照片`);
+function goPrev() {
+  if (currentIdx > 0) { currentIdx--; renderPhotoItem(); }
 }
 
-function updateBulkBtns() {
-  const hasAny    = photoItems.some(i => (photoState[i] || []).length > 0);
-  const hasUnsent = photoItems.some(i => (photoState[i] || []).some(p => !p.sent));
-  const unsentCnt = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent)).length;
-
-  const bu = document.getElementById('btn-unsent');
-  const ba = document.getElementById('btn-all');
-
-  bu.className = `bulk-btn bulk-unsent${hasUnsent ? '' : ' bulk-disabled'}`;
-  bu.textContent = hasUnsent ? `傳未送的 (${unsentCnt} 項) 給 PM` : '傳未送的給 PM';
-
-  ba.className = `bulk-btn bulk-all${hasAny ? '' : ' bulk-disabled'}`;
+function goNext() {
+  if (currentIdx < photoItems.length - 1) {
+    currentIdx++;
+    renderPhotoItem();
+  } else {
+    // 最後一項 → 全部傳給PM
+    const items = photoItems.filter(i => (photoState[i] || []).length > 0);
+    if (items.length) _send(items);
+  }
 }
 
 // ── 拍照 ─────────────────────────────────────────────────
-function triggerCamera(item) {
+function triggerCamera() {
+  const item = photoItems[currentIdx];
+  if ((photoState[item] || []).length >= 5) return;
   let input = document.getElementById('fi-' + item);
   if (!input) {
     input = document.createElement('input');
@@ -342,146 +327,109 @@ function triggerCamera(item) {
 }
 
 async function handleFile(item, file) {
-  showOverlay(`上傳 ${item} 中...`);
+  showOverlay('上傳中...');
   try {
     const base64  = await toBase64(file);
     const idx     = (photoState[item] || []).length + 1;
-    // 檔名：點位ID_姓名_項目名_序號.jpg
     const filename = `${selectedStation.stationId}_${me.displayName}_${item}_${idx}.jpg`;
-
     const res  = await fetch(GAS_URL, {
       method: 'POST',
       body: JSON.stringify({
-        action: 'uploadPhoto',
-        taskId, projectName,
-        stationId: selectedStation.stationId,
-        stationName: selectedStation.name,
-        photoItem: item, photoIndex: idx,
-        uploaderName: me.displayName,
-        base64, filename
+        action: 'uploadPhoto', taskId, projectName,
+        stationId: selectedStation.stationId, stationName: selectedStation.name,
+        photoItem: item, photoIndex: idx, uploaderName: me.displayName, base64, filename
       })
     });
     const { ok, driveUrl, error } = await res.json();
-
     if (ok) {
-      photoState[item].push({ driveUrl, filename, sent: false });
-      showToast(`${item} 上傳完成 ✓`);
+      photoState[item].push({ driveUrl, sent: false });
+      showToast('上傳完成 ✓');
     } else {
-      showToast('上傳失敗：' + (error || '未知錯誤'));
+      showToast('上傳失敗：' + (error || '未知'));
     }
   } catch (err) {
     showToast('上傳失敗：' + err.message);
   }
   hideOverlay();
-  renderPhotos();
+  renderPhotoItem();
 }
 
 function toBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = e => resolve(e.target.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const r = new FileReader();
+    r.onload  = e => resolve(e.target.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
   });
 }
 
-// ── 通知 PM ──────────────────────────────────────────────
-// 重要：shareTargetPicker 必須在 user activation 內同步呼叫
-// 因此不在呼叫前使用任何 await
-
-function notifySingle(item) {
-  const unsent = (photoState[item] || []).filter(p => !p.sent);
-  if (!unsent.length) return;
-  _send([item]);
+// ── 傳送 ─────────────────────────────────────────────────
+function sendCurrentItem() {
+  const item = photoItems[currentIdx];
+  const hasUnsent = (photoState[item] || []).some(p => !p.sent);
+  if (hasUnsent) _send([item]);
 }
 
-function notifyUnsent() {
-  const items = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent));
-  if (!items.length) return;
-  _send(items);
+async function _send(items) {
+  showOverlay('傳送中...');
+  try {
+    const flex = buildFlex(items);
+    await liff.sendMessages([flex]);
+    await Promise.all(items.map(item =>
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'markSentToPM', taskId, stationId: selectedStation.stationId, photoItem: item })
+      }).catch(() => {})
+    ));
+    items.forEach(item => (photoState[item] || []).forEach(p => p.sent = true));
+    showToast('已傳送給 PM ✓');
+  } catch(err) {
+    showToast('傳送失敗：' + (err && err.message ? err.message : err));
+  }
+  hideOverlay();
+  renderPhotoItem();
 }
 
-function notifyAll() {
-  const items = photoItems.filter(i => (photoState[i] || []).length > 0);
-  if (!items.length) return;
-  _send(items);
-}
-
-function _send(items) {
-  const flex = buildFlex(items);
-
-  // ★ shareTargetPicker 同步呼叫（保留 user activation）
-  const shareP = liff.shareTargetPicker([flex], { isMultiple: false });
-
-  // 同步發起 GAS mark 請求
-  const markP = Promise.all(items.map(item =>
-    fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'markSentToPM',
-        taskId, stationId: selectedStation.stationId, photoItem: item
-      })
-    }).catch(() => {})
-  ));
-
-  // 等待兩者完成
-  Promise.all([shareP, markP])
-    .then(() => {
-      items.forEach(item => (photoState[item] || []).forEach(p => p.sent = true));
-      renderPhotos();
-      showToast('已傳送給 PM ✓');
-    })
-    .catch(() => showToast('已取消或發送失敗'));
-}
-
-// ── 建立 Flex Message ─────────────────────────────────────
+// ── Flex Message ─────────────────────────────────────────
 function buildFlex(items) {
-  const time    = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+  const time = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
   const bubbles = [];
 
   // 摘要 bubble
-  const summaryRows = photoItems.map(item => {
-    const count = (photoState[item] || []).length;
-    const done  = count > 0;
-    return {
-      type: 'box', layout: 'horizontal', spacing: 'sm', margin: 'sm',
-      contents: [
-        { type: 'text', text: done ? '✓' : '－', color: done ? '#1DB954' : '#BBBBBB', flex: 0, size: 'sm', weight: done ? 'bold' : 'regular' },
-        { type: 'text', text: item + (done ? ` (${count}張)` : ''), color: done ? '#333333' : '#AAAAAA', size: 'sm', flex: 1 }
-      ]
-    };
-  });
-
   bubbles.push({
     type: 'bubble', size: 'kilo',
     header: {
       type: 'box', layout: 'vertical', backgroundColor: '#185FA5', paddingAll: '14px',
       contents: [
         { type: 'text', text: selectedStation.name, color: '#FFFFFF', weight: 'bold', size: 'md' },
-        { type: 'text', text: me.displayName + '　' + time, color: 'rgba(255,255,255,0.75)', size: 'xs', margin: 'xs' }
+        { type: 'text', text: me.displayName + '　' + time, color: '#FFFFFFBF', size: 'xs', margin: 'xs' }
       ]
     },
     body: {
       type: 'box', layout: 'vertical', spacing: 'none',
       contents: [
-        { type: 'text', text: '拍照任務', weight: 'bold', size: 'xs', color: '#888888', margin: 'none' },
-        ...summaryRows
+        { type: 'text', text: '拍照任務完成狀況', weight: 'bold', size: 'xs', color: '#888888' },
+        ...photoItems.map(item => {
+          const count = (photoState[item] || []).length;
+          return {
+            type: 'box', layout: 'horizontal', spacing: 'sm', margin: 'sm',
+            contents: [
+              { type: 'text', text: count > 0 ? '✓' : '－', color: count > 0 ? '#1DB954' : '#BBBBBB', flex: 0, size: 'sm', weight: count > 0 ? 'bold' : 'regular' },
+              { type: 'text', text: item + (count > 0 ? ` (${count}張)` : ''), color: count > 0 ? '#333333' : '#AAAAAA', size: 'sm', flex: 1 }
+            ]
+          };
+        })
       ]
     }
   });
 
-  // 每個 item 一張照片 bubble（只傳本次選到的項目）
+  // 每個項目的照片 bubble
   items.forEach(item => {
     const photos = (photoState[item] || []).filter(p => p.driveUrl);
     if (!photos.length) return;
-
     bubbles.push({
       type: 'bubble', size: 'kilo',
-      hero: {
-        type: 'image',
-        url: photos[0].driveUrl,
-        size: 'full', aspectRatio: '4:3', aspectMode: 'cover'
-      },
+      hero: { type: 'image', url: photos[0].driveUrl, size: 'full', aspectRatio: '4:3', aspectMode: 'cover' },
       body: {
         type: 'box', layout: 'vertical', paddingAll: '10px',
         contents: [
@@ -496,25 +444,20 @@ function buildFlex(items) {
   return {
     type: 'flex',
     altText: `【${selectedStation.name}】${items.join('、')} — ${me.displayName}`,
-    contents: bubbles.length === 1
-      ? bubbles[0]
-      : { type: 'carousel', contents: bubbles }
+    contents: bubbles.length === 1 ? bubbles[0] : { type: 'carousel', contents: bubbles }
   };
 }
 
 // ── 工具 ─────────────────────────────────────────────────
-function show(id)        { document.getElementById(id).style.display = id === 'screen-photos' ? 'flex' : 'block'; }
-function hide(id)        { document.getElementById(id).style.display = 'none'; }
 function setText(id, v)  { const el = document.getElementById(id); if (el) el.textContent = v; }
 function showOverlay(msg){ document.getElementById('overlay').style.display = 'flex'; setText('overlay-text', msg); }
 function hideOverlay()   { document.getElementById('overlay').style.display = 'none'; }
 
-function showToast(msg) {
+function showToast(msg, ms = 2500) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.style.display = 'none', 2200);
+  el._t = setTimeout(() => el.style.display = 'none', ms);
 }
 
 init();
