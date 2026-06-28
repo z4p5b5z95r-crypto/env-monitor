@@ -382,12 +382,6 @@ function sendAllUnsent() {
 async function _send(items) {
   showOverlay('傳送中...');
   try {
-    const ctx = liff.getContext();
-    if (!ctx || !['utou','room','group'].includes(ctx.type)) {
-      showToast('請在群組對話中開啟此 LIFF', 4000);
-      hideOverlay();
-      return;
-    }
     const flex = buildFlex(items);
     await liff.sendMessages([flex]);
     await Promise.all(items.map(item =>
