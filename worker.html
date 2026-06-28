@@ -45,30 +45,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 #screen-photos { display: none; flex-direction: column; height: 100vh; }
 .photos-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 
-.item-card { background: #fff; border-radius: 12px; overflow: hidden; }
-.item-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
-.item-name { font-size: 13px; font-weight: 600; color: #333; flex: 1; }
-.item-badge {
-  font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap;
-}
+.item-card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.item-head { display: flex; align-items: center; gap: 8px; padding: 11px 14px 0; }
+.item-name { font-size: 14px; font-weight: 700; color: #222; flex: 1; }
+.item-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
 .badge-none   { background: #f0f0f0; color: #aaa; }
 .badge-unsent { background: #FFF8E1; color: #B45309; }
 .badge-sent   { background: #E8F5E9; color: #1D9E75; }
 
-.thumb-row { padding: 0 12px 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: .5px solid #ddd; }
-.add-btn {
-  width: 56px; height: 56px; border-radius: 8px; border: 1.5px dashed #ccc;
-  background: none; cursor: pointer; font-size: 24px; color: #bbb;
-  display: flex; align-items: center; justify-content: center;
-  transition: border-color .15s, color .15s;
+/* 大拍照按鈕 */
+.cam-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 10px 14px; padding: 14px;
+  background: #185FA5; color: #fff;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-size: 15px; font-weight: 700; width: calc(100% - 28px);
+  transition: opacity .15s;
 }
-.add-btn:active { border-color: #185FA5; color: #185FA5; background: #EBF4FF; }
+.cam-btn:active { opacity: .8; }
+.cam-btn.has-photos { background: #1450a0; }
+.cam-btn.maxed { background: #ddd; color: #aaa; pointer-events: none; }
 
-.item-actions { border-top: .5px solid #f5f5f5; padding: 8px 12px; display: flex; gap: 8px; align-items: center; }
+/* 縮圖列 */
+.thumb-row { padding: 0 14px 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.thumb { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: .5px solid #ddd; }
+
+.item-actions { border-top: .5px solid #f5f5f5; padding: 8px 14px; display: flex; gap: 8px; align-items: center; }
 .send-btn {
-  height: 30px; padding: 0 14px; border-radius: 8px; border: none; cursor: pointer;
-  font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;
+  height: 32px; padding: 0 16px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
   transition: all .15s;
 }
 .send-active   { background: #06C755; color: #fff; }
@@ -271,9 +276,11 @@ function renderPhotos() {
       `<img class="thumb" src="${p.driveUrl}" alt="${item}${i+1}" loading="lazy">`
     ).join('');
 
-    const addBtnHtml = count < 5
-      ? `<button class="add-btn" onclick="triggerCamera('${item}')" aria-label="新增${item}照片">＋</button>`
-      : '';
+    const camClass = count >= 5 ? 'maxed' : (count > 0 ? 'has-photos' : '');
+    const camLabel = count >= 5 ? '已達上限 5 張'
+                   : count > 0  ? `📷 繼續拍照（已拍 ${count} 張）`
+                   :               '📷 拍照';
+    const camBtn = `<button class="cam-btn ${camClass}" onclick="triggerCamera('${item}')">${camLabel}</button>`;
 
     let sendClass = 'send-disabled', sendText = '傳給 PM';
     if (count && !hasUnsent)  { sendClass = 'send-sent';   sendText = '✓ 已傳送'; }
@@ -283,12 +290,12 @@ function renderPhotos() {
       <div class="item-card">
         <div class="item-head">
           <div class="item-name">${item}</div>
-          <div class="item-badge ${badgeClass}">${badgeText}${count ? ' (' + count + '張)' : ''}</div>
+          <div class="item-badge ${badgeClass}">${badgeText}</div>
         </div>
-        <div class="thumb-row">${thumbsHtml}${addBtnHtml}</div>
+        ${camBtn}
+        ${thumbsHtml ? `<div class="thumb-row">${thumbsHtml}</div>` : ''}
         <div class="item-actions">
           <button class="send-btn ${sendClass}" onclick="notifySingle('${item}')">${sendText}</button>
-          ${count >= 5 ? '<span style="font-size:10px;color:#aaa">已達上限(5張)</span>' : ''}
         </div>
       </div>
     `;
