@@ -682,10 +682,10 @@ function sendTask() {
     }
   };
 
-  // ★ shareTargetPicker 同步呼叫（保留 user activation）
-  const shareP = liff.shareTargetPicker([flex], { isMultiple: false });
+  // 直接發送到當前 LINE 對話（不跳選擇畫面）
+  const shareP = liff.sendMessages([flex]);
 
-  // 同步發起 GAS 記錄（非關鍵，失敗不影響發送）
+  // 非同步記錄到 GAS（失敗不影響發送）
   const recordP = fetch(GAS_URL, {
     method: 'POST',
     body: JSON.stringify({
