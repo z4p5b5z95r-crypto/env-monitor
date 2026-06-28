@@ -134,6 +134,49 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 .manage-save-btn:active { opacity: .85; }
 .photo-items-input { width: 100%; min-height: 80px; border: .5px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: 13px; resize: none; font-family: inherit; }
 
+/* ── 卡片預覽畫面 ── */
+#screen-preview { display: none; flex-direction: column; height: 100vh; background: #1a1a2e; }
+.preview-bg { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 20px 100px; }
+.preview-phone-label { font-size: 11px; color: rgba(255,255,255,.4); text-align: center; margin-bottom: 12px; letter-spacing: .05em; }
+.line-bubble {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  width: 100%; max-width: 320px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+.line-bub-header {
+  background: #185FA5; padding: 14px 16px;
+}
+.line-bub-proj  { color: rgba(255,255,255,.7); font-size: 11px; margin-bottom: 3px; }
+.line-bub-title { color: #fff; font-size: 16px; font-weight: 700; }
+.line-bub-meta  { color: rgba(255,255,255,.7); font-size: 11px; margin-top: 3px; }
+.line-bub-body  { padding: 14px 16px; }
+.line-bub-section-title { font-size: 11px; font-weight: 700; color: #888; margin-bottom: 8px; letter-spacing: .04em; }
+.line-bub-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #333; margin-bottom: 6px; }
+.line-bub-note { font-size: 11px; color: #888; padding-top: 10px; margin-top: 10px; border-top: .5px solid #eee; }
+.line-bub-footer {
+  background: #f9f9f9; border-top: .5px solid #eee;
+  padding: 12px 16px; text-align: center;
+}
+.line-bub-btn {
+  background: #185FA5; color: #fff; border: none; border-radius: 8px;
+  padding: 9px 24px; font-size: 13px; font-weight: 700; width: 100%;
+  cursor: default; opacity: .9;
+}
+.preview-send-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: #1a1a2e; border-top: .5px solid rgba(255,255,255,.1);
+  display: flex; gap: 10px;
+}
+.preview-back-btn {
+  height: 46px; flex: 0 0 80px; border: 1px solid rgba(255,255,255,.25); background: none;
+  color: rgba(255,255,255,.7); border-radius: 12px; font-size: 13px; cursor: pointer;
+}
+.preview-confirm-btn {
+  height: 46px; flex: 1; background: #06C755; color: #fff;
+  border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+
 /* ── Toast ── */
 #toast {
   position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
@@ -257,29 +300,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
       <textarea class="note-input" id="task-note" placeholder="例：攜帶採水桶、確認採樣瓶數量" oninput="updatePreview()"></textarea>
     </div>
 
-    <!-- 卡片預覽 -->
+    <!-- 已選摘要 -->
     <div class="section" style="padding-top:12px;padding-bottom:14px">
-      <div class="section-label">發送卡片預覽</div>
-      <div class="preview-card">
-        <div class="preview-header">
-          <div style="color:rgba(255,255,255,.75);font-size:11px" id="prev-proj"></div>
-          <div style="color:#fff;font-size:15px;font-weight:600;margin-top:2px">拍照任務通知</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px" id="prev-date"></div>
-        </div>
-        <div class="preview-body">
-          <div id="prev-items" style="margin-bottom:8px"></div>
-          <div id="prev-note" style="display:none;font-size:11px;color:#888;padding-top:8px;border-top:.5px solid #eee;margin-top:8px"></div>
-          <div class="preview-footer">開始拍照 →</div>
-        </div>
-      </div>
+      <div class="section-label">已選項目 <span id="checked-count" style="color:#185FA5;font-weight:700"></span></div>
+      <div id="selected-summary" style="background:#fff;border-radius:10px;padding:10px 14px;font-size:12px;color:#888">尚未選擇任何項目</div>
     </div>
 
   </div><!-- end scroll -->
 
   <div class="send-bar">
-    <button class="send-btn" id="send-btn" onclick="sendTask()" disabled>
-      選擇發送對象 →
+    <button class="send-btn" id="send-btn" onclick="showPreview()" disabled>
+      預覽卡片 →
     </button>
+  </div>
+</div>
+
+<!-- 卡片預覽畫面 -->
+<div id="screen-preview">
+  <div class="preview-bg">
+    <div class="preview-phone-label">LINE 卡片預覽</div>
+    <div class="line-bubble">
+      <div class="line-bub-header">
+        <div class="line-bub-proj" id="prev-proj"></div>
+        <div class="line-bub-title">拍照任務通知</div>
+        <div class="line-bub-meta" id="prev-meta"></div>
+      </div>
+      <div class="line-bub-body">
+        <div class="line-bub-section-title">拍照項目</div>
+        <div id="prev-items"></div>
+        <div id="prev-note" class="line-bub-note" style="display:none"></div>
+      </div>
+      <div class="line-bub-footer">
+        <div class="line-bub-btn">開始拍照</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.35);text-align:center">
+      點擊「開始拍照」按鈕後現場人員可開啟拍照介面
+    </div>
+  </div>
+  <div class="preview-send-bar">
+    <button class="preview-back-btn" onclick="hidePreview()">← 修改</button>
+    <button class="preview-confirm-btn" onclick="sendTask()">發送到群組 ✓</button>
   </div>
 </div>
 
@@ -451,20 +512,39 @@ function renderStationPreview() {
 }
 
 function updatePreview() {
-  const itemsEl = document.getElementById('prev-items');
-  itemsEl.innerHTML = checkedItems.length
-    ? checkedItems.map(item => `<div class="preview-item"><span style="color:#185FA5">📷</span>${item}</div>`).join('')
-    : '<div style="color:#aaa;font-size:12px">請勾選至少一個拍照項目</div>';
-
-  const note   = document.getElementById('task-note').value.trim();
-  const noteEl = document.getElementById('prev-note');
-  if (note) { noteEl.style.display = 'block'; noteEl.textContent = '備注：' + note; }
-  else       { noteEl.style.display = 'none'; }
-
-  setText('prev-proj', selectedProject ? selectedProject.name : '');
-  setText('prev-date', new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' }));
-
+  // 已選摘要（compose 畫面底部）
+  const summaryEl = document.getElementById('selected-summary');
+  const countEl   = document.getElementById('checked-count');
+  if (checkedItems.length) {
+    countEl.textContent  = `（${checkedItems.length} 項）`;
+    summaryEl.innerHTML  = checkedItems.map(i => `<span style="display:inline-block;background:#EBF4FF;color:#185FA5;border-radius:12px;padding:2px 10px;margin:2px;font-size:12px">📷 ${i}</span>`).join('');
+  } else {
+    countEl.textContent  = '';
+    summaryEl.textContent = '尚未選擇任何項目';
+    summaryEl.style.color = '#bbb';
+  }
   document.getElementById('send-btn').disabled = checkedItems.length === 0;
+}
+
+function showPreview() {
+  // 填入預覽卡片內容
+  const dateStr = new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
+  setText('prev-proj', selectedProject ? selectedProject.name : '');
+  setText('prev-meta', `${dateStr}　發送：${me ? me.displayName : 'PM'}`);
+  document.getElementById('prev-items').innerHTML =
+    checkedItems.map(i => `<div class="line-bub-item"><span>📷</span><span>${i}</span></div>`).join('');
+  const note = document.getElementById('task-note').value.trim();
+  const noteEl = document.getElementById('prev-note');
+  if (note) { noteEl.style.display = 'block'; noteEl.textContent = '📌 ' + note; }
+  else       { noteEl.style.display = 'none'; }
+  // 切換畫面
+  hide('screen-compose');
+  document.getElementById('screen-preview').style.display = 'flex';
+}
+
+function hidePreview() {
+  document.getElementById('screen-preview').style.display = 'none';
+  show('screen-compose');
 }
 
 // ── 發送任務 ─────────────────────────────────────────────
@@ -543,8 +623,12 @@ function sendTask() {
   }).catch(() => {});
 
   Promise.all([shareP, recordP])
-    .then(() => showToast('任務已發送 ✓'))
-    .catch(() => showToast('已取消'));
+    .then(() => {
+      document.getElementById('screen-preview').style.display = 'none';
+      showProjectScreen();
+      showToast('任務已發送 ✓');
+    })
+    .catch(() => showToast('已取消或未發送'));
 }
 
 // ── 管理功能 ──────────────────────────────────────────────

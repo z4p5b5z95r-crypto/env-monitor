@@ -6,129 +6,163 @@
 <title>環境監測 — 管理後台</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ── 密碼畫面 ── */
-#screen-login {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; padding: 24px;
-}
-.login-card {
-  background: #fff; border-radius: 16px; padding: 40px 32px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.08); width: 100%; max-width: 360px;
-}
-.login-logo { font-size: 36px; text-align: center; margin-bottom: 8px; }
-.login-title { text-align: center; font-size: 18px; font-weight: 700; color: #185FA5; margin-bottom: 4px; }
-.login-sub   { text-align: center; font-size: 12px; color: #999; margin-bottom: 28px; }
-.login-input {
-  width: 100%; height: 44px; border: 1.5px solid #ddd; border-radius: 10px;
-  padding: 0 14px; font-size: 15px; margin-bottom: 12px; outline: none;
-  transition: border-color .2s;
-}
+#screen-login { display: flex; align-items: center; justify-content: center; height: 100vh; padding: 24px; }
+.login-card { background: #fff; border-radius: 18px; padding: 44px 36px; box-shadow: 0 4px 32px rgba(0,0,0,.10); width: 100%; max-width: 340px; }
+.login-logo  { font-size: 40px; text-align: center; margin-bottom: 10px; }
+.login-title { text-align: center; font-size: 18px; font-weight: 700; color: #185FA5; margin-bottom: 3px; }
+.login-sub   { text-align: center; font-size: 12px; color: #aaa; margin-bottom: 28px; }
+.login-input { width: 100%; height: 44px; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 0 14px; font-size: 14px; outline: none; margin-bottom: 12px; transition: border-color .2s; }
 .login-input:focus { border-color: #185FA5; }
-.login-btn {
-  width: 100%; height: 44px; background: #185FA5; color: #fff;
-  border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
-}
+.login-btn   { width: 100%; height: 44px; background: #185FA5; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
 .login-btn:hover { background: #1450a0; }
-.login-error { color: #e53; font-size: 13px; text-align: center; margin-top: 8px; }
+.login-err   { color: #e53; font-size: 12px; text-align: center; margin-top: 8px; min-height: 18px; }
 
-/* ── 管理後台 ── */
-#screen-admin { display: none; }
-.admin-header {
+/* ── 管理後台框架 ── */
+#screen-admin { display: none; flex-direction: column; height: 100vh; }
+.topbar {
   background: #185FA5; color: #fff;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px;
-  position: sticky; top: 0; z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  padding: 0 20px; height: 50px; flex-shrink: 0;
 }
-.admin-header-title { font-size: 16px; font-weight: 700; }
-.logout-btn {
-  background: rgba(255,255,255,.2); border: none; color: #fff;
-  padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
-}
-.logout-btn:hover { background: rgba(255,255,255,.3); }
+.topbar-title { font-size: 15px; font-weight: 700; }
+.logout-btn { background: rgba(255,255,255,.18); border: none; color: #fff; padding: 5px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+.logout-btn:hover { background: rgba(255,255,255,.28); }
 
-/* ── 分頁 ── */
-.tab-bar {
-  background: #fff; display: flex; border-bottom: 1.5px solid #eee;
-  position: sticky; top: 49px; z-index: 99;
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── 左側計畫列表 ── */
+.sidebar {
+  width: 210px; flex-shrink: 0;
+  background: #fff; border-right: 0.5px solid #e8e8e8;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
-.tab {
-  flex: 1; padding: 14px 8px; text-align: center; font-size: 13px; font-weight: 500;
-  color: #888; cursor: pointer; border-bottom: 3px solid transparent;
-  transition: all .15s;
+.sidebar-head { padding: 14px 14px 8px; font-size: 11px; font-weight: 700; color: #185FA5; letter-spacing: .06em; }
+.proj-list { flex: 1; overflow-y: auto; padding: 0 8px; }
+.proj-item {
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; color: #555; margin-bottom: 2px;
+  transition: background .12s;
 }
+.proj-item:hover { background: #f0f5fc; }
+.proj-item.active { background: #EBF4FF; color: #185FA5; font-weight: 600; }
+.proj-item-desc { font-size: 11px; color: #aaa; margin-top: 1px; }
+.sidebar-add {
+  padding: 10px 8px; border-top: 0.5px solid #f0f0f0;
+}
+.new-proj-btn {
+  width: 100%; padding: 8px; border: 1.5px dashed #c5d8f0; border-radius: 8px;
+  background: none; color: #185FA5; font-size: 12px; cursor: pointer;
+  transition: background .12s;
+}
+.new-proj-btn:hover { background: #f0f5fc; }
+
+/* ── 右側內容 ── */
+.content { flex: 1; overflow-y: auto; background: #f4f6f9; }
+
+/* 空白提示 */
+.empty-panel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: #bbb; gap: 8px;
+}
+.empty-panel-icon { font-size: 36px; }
+.empty-panel-text { font-size: 13px; }
+
+/* 右側標題列 */
+.content-header {
+  background: #fff; padding: 16px 24px; border-bottom: 0.5px solid #e8e8e8;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.content-title { font-size: 16px; font-weight: 700; color: #222; }
+.del-proj-btn {
+  background: none; border: 1px solid #fcc; color: #e53;
+  padding: 5px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
+}
+.del-proj-btn:hover { background: #fff0f0; }
+
+/* 分頁 */
+.tab-bar { display: flex; background: #fff; border-bottom: 0.5px solid #e8e8e8; padding: 0 20px; }
+.tab { padding: 11px 16px; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2.5px solid transparent; transition: all .15s; }
 .tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 700; }
 
-.tab-content { display: none; padding: 20px; max-width: 860px; margin: 0 auto; }
-.tab-content.active { display: block; }
+.panel { display: none; padding: 20px 24px; }
+.panel.active { display: block; }
 
-/* ── 卡片 ── */
-.card {
-  background: #fff; border-radius: 14px; overflow: hidden;
-  box-shadow: 0 1px 6px rgba(0,0,0,.07); margin-bottom: 16px;
-}
-.card-title {
-  padding: 14px 18px 10px; font-size: 12px; font-weight: 700;
-  color: #185FA5; letter-spacing: .06em; border-bottom: 1px solid #f0f0f0;
-}
-.list-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 18px; border-bottom: .5px solid #f5f5f5;
-}
-.list-row:last-child { border-bottom: none; }
-.row-main { flex: 1; }
-.row-name { font-size: 14px; font-weight: 600; color: #333; }
-.row-sub  { font-size: 11px; color: #999; margin-top: 2px; }
-.del-btn {
-  background: #fff; border: 1px solid #fcc; color: #e53;
-  padding: 4px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
-  white-space: nowrap;
-}
-.del-btn:hover { background: #fff0f0; }
-.empty-hint { padding: 20px 18px; font-size: 13px; color: #aaa; }
-
-/* ── 表單 ── */
-.form-card { background: #fff; border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
-.form-title { font-size: 13px; font-weight: 700; color: #185FA5; margin-bottom: 12px; }
-.form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.form-input {
-  flex: 1; min-width: 160px; height: 38px; border: 1.5px solid #ddd;
-  border-radius: 9px; padding: 0 12px; font-size: 13px; outline: none;
-  transition: border-color .2s;
-}
-.form-input:focus { border-color: #185FA5; }
-.form-textarea {
-  width: 100%; min-height: 80px; border: 1.5px solid #ddd; border-radius: 9px;
-  padding: 10px 12px; font-size: 13px; resize: vertical; font-family: inherit; outline: none;
-}
-.form-textarea:focus { border-color: #185FA5; }
-.form-select {
-  flex: 1; min-width: 160px; height: 38px; border: 1.5px solid #ddd;
-  border-radius: 9px; padding: 0 12px; font-size: 13px; background: #fff; outline: none;
-}
-.add-btn {
-  height: 38px; padding: 0 20px; background: #185FA5; color: #fff;
-  border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
-}
+/* 表單區塊 */
+.form-block { background: #fff; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+.form-block-title { font-size: 12px; font-weight: 700; color: #185FA5; margin-bottom: 12px; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.fi { flex: 1; min-width: 140px; height: 36px; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0 11px; font-size: 13px; outline: none; transition: border-color .15s; background: #fff; }
+.fi:focus { border-color: #185FA5; }
+.fi-wide { width: 100%; height: 36px; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0 11px; font-size: 13px; outline: none; transition: border-color .15s; margin-bottom: 8px; background: #fff; }
+.fi-wide:focus { border-color: #185FA5; }
+.fia { width: 100%; min-height: 72px; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 9px 11px; font-size: 13px; resize: vertical; font-family: inherit; outline: none; transition: border-color .15s; background: #fff; }
+.fia:focus { border-color: #185FA5; }
+.add-btn { height: 36px; padding: 0 18px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .add-btn:hover { background: #1450a0; }
-.save-btn {
-  height: 38px; padding: 0 20px; background: #06C755; color: #fff;
-  border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
-}
+.save-btn { height: 36px; padding: 0 18px; background: #06C755; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .save-btn:hover { background: #05a847; }
 
-/* ── 點位/模板選擇計畫 ── */
-.proj-selector { margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-.proj-selector label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
+/* 列表 */
+.list-block { background: #fff; border-radius: 12px; overflow: hidden; }
+.list-block-title { font-size: 12px; font-weight: 700; color: #185FA5; padding: 12px 18px 8px; border-bottom: 0.5px solid #f0f0f0; }
+.list-row { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-bottom: 0.5px solid #f5f5f5; }
+.list-row:last-child { border-bottom: none; }
+.row-info { flex: 1; }
+.row-name { font-size: 13px; font-weight: 600; color: #333; }
+.row-sub  { font-size: 11px; color: #aaa; margin-top: 2px; }
+.del-btn  { background: none; border: 1px solid #fcc; color: #e53; padding: 3px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.del-btn:hover { background: #fff0f0; }
+.empty-hint { padding: 16px 18px; font-size: 13px; color: #aaa; }
+
+/* ── 新增計畫 Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  display: none; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay.open { display: flex; }
+.modal-box { background: #fff; border-radius: 16px; padding: 28px 28px; width: 90%; max-width: 380px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #222; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+.modal-cancel { height: 36px; padding: 0 18px; background: none; border: 1px solid #ddd; color: #666; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.modal-ok     { height: 36px; padding: 0 18px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
 /* ── Toast ── */
 #toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: rgba(0,0,0,.78); color: #fff; font-size: 13px;
-  padding: 10px 22px; border-radius: 24px; display: none; z-index: 999; white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  padding: 9px 22px; border-radius: 22px; display: none; z-index: 999;
+  white-space: nowrap;
+}
+
+/* ── 拍照項目 Chips ── */
+.photo-chips-wrap { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.pchip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; transition: all .13s; user-select: none;
+}
+.pchip-sys-on  { background: #185FA5; color: #fff; border-color: #185FA5; }
+.pchip-sys-off { background: #fff; color: #aaa; border-color: #ddd; }
+.pchip-custom  { background: #dcfce7; color: #16a34a; border-color: #16a34a; }
+.pchip-custom-off { background: #fff; color: #aaa; border-color: #ddd; }
+.pchip-del { font-size: 12px; opacity: .7; line-height: 1; }
+.pchip-add { background: none; border: 1.5px dashed #ccc; color: #aaa; padding: 6px 13px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+.pchip-add:hover { border-color: #185FA5; color: #185FA5; }
+.chips-hint { font-size: 11px; color: #bbb; margin-bottom: 10px; }
+.chips-add-row { display: flex; gap: 8px; margin-top: 4px; }
+
+/* 手機響應 */
+@media (max-width: 600px) {
+  .sidebar { width: 100%; border-right: none; border-bottom: 0.5px solid #e8e8e8; max-height: 200px; }
+  .main { flex-direction: column; }
+  body { overflow: auto; }
+  #screen-admin { height: auto; overflow: auto; }
+  .content { overflow: visible; }
 }
 </style>
 </head>
@@ -143,93 +177,109 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <input class="login-input" type="password" id="pw-input" placeholder="請輸入密碼"
            onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">登入</button>
-    <div class="login-error" id="login-error"></div>
+    <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
 <!-- 管理後台 -->
 <div id="screen-admin">
-  <div class="admin-header">
-    <div class="admin-header-title">🌿 環境監測 管理後台</div>
+  <div class="topbar">
+    <div class="topbar-title">🌿 環境監測 管理後台</div>
     <button class="logout-btn" onclick="doLogout()">登出</button>
   </div>
+  <div class="main">
 
-  <div class="tab-bar">
-    <div class="tab active" onclick="switchTab('proj')">計畫管理</div>
-    <div class="tab" onclick="switchTab('station')">點位管理</div>
-    <div class="tab" onclick="switchTab('template')">提醒模板</div>
+    <!-- 左側 -->
+    <div class="sidebar">
+      <div class="sidebar-head">監測計畫</div>
+      <div class="proj-list" id="proj-list"></div>
+      <div class="sidebar-add">
+        <button class="new-proj-btn" onclick="openAddProj()">＋ 新增計畫</button>
+      </div>
+    </div>
+
+    <!-- 右側 -->
+    <div class="content" id="content">
+      <div class="empty-panel" id="empty-panel">
+        <div class="empty-panel-icon">📋</div>
+        <div class="empty-panel-text">請從左側選擇計畫</div>
+      </div>
+      <div id="proj-detail" style="display:none">
+        <div class="content-header">
+          <div class="content-title" id="detail-title"></div>
+          <button class="del-proj-btn" onclick="delProject()">刪除計畫</button>
+        </div>
+        <div class="tab-bar">
+          <div class="tab active" onclick="switchPanel('station')">點位管理</div>
+          <div class="tab" onclick="switchPanel('template')">提醒模板</div>
+          <div class="tab" onclick="switchPanel('photo')">拍照項目</div>
+        </div>
+
+        <!-- 點位 -->
+        <div class="panel active" id="panel-station">
+          <div class="form-block">
+            <div class="form-block-title">＋ 新增點位</div>
+            <div class="form-row">
+              <input class="fi" id="st-name" type="text" placeholder="點位名稱（必填）">
+              <input class="fi" id="st-loc"  type="text" placeholder="地點（選填）">
+              <input class="fi" id="st-note" type="text" placeholder="備注（選填）">
+              <button class="add-btn" onclick="addStation()">新增</button>
+            </div>
+          </div>
+          <div class="list-block">
+            <div class="list-block-title">點位清單</div>
+            <div id="station-list"></div>
+          </div>
+        </div>
+
+        <!-- 提醒模板 -->
+        <div class="panel" id="panel-template">
+          <div class="form-block">
+            <div class="form-block-title">＋ 新增提醒事項</div>
+            <input class="fi-wide" id="tpl-category" type="text" placeholder="類別（例：出發前提醒、安全提醒）">
+            <textarea class="fia" id="tpl-content" placeholder="提醒內容（例：攜帶採水桶、確認採樣瓶數量）"></textarea>
+            <div style="margin-top:8px">
+              <button class="add-btn" onclick="addTemplate()">新增</button>
+            </div>
+          </div>
+          <div class="list-block">
+            <div class="list-block-title">提醒事項清單</div>
+            <div id="template-list"></div>
+          </div>
+        </div>
+
+        <!-- 拍照項目 -->
+        <div class="panel" id="panel-photo">
+          <div class="form-block">
+            <div class="form-block-title">拍照項目設定</div>
+            <div class="chips-hint">藍色 = 啟用 ｜ 灰色 = 停用 ｜ 綠色 = 自訂項目（點擊切換）</div>
+            <div class="photo-chips-wrap" id="photo-chips"></div>
+            <div class="chips-add-row">
+              <input class="fi" id="new-photo-item" type="text" placeholder="新增自訂項目…"
+                     onkeydown="if(event.key==='Enter')addPhotoChip()">
+              <button class="add-btn" onclick="addPhotoChip()">新增</button>
+            </div>
+            <div style="margin-top:12px">
+              <button class="save-btn" onclick="savePhotoItems()">儲存拍照項目</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- 計畫管理 -->
-  <div id="tab-proj" class="tab-content active">
-    <div class="form-card">
-      <div class="form-title">＋ 新增計畫</div>
-      <div class="form-row">
-        <input class="form-input" id="proj-name" type="text" placeholder="計畫名稱（必填）">
-        <input class="form-input" id="proj-desc" type="text" placeholder="說明（選填）">
-        <button class="add-btn" onclick="addProject()">新增</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">現有計畫</div>
-      <div id="proj-list"><div class="empty-hint">載入中...</div></div>
-    </div>
-  </div>
-
-  <!-- 點位管理 -->
-  <div id="tab-station" class="tab-content">
-    <div class="proj-selector">
-      <label>選擇計畫：</label>
-      <select class="form-select" id="station-proj-sel" onchange="loadStations()">
-        <option value="">— 請選擇 —</option>
-      </select>
-    </div>
-    <div class="form-card" id="station-form" style="display:none">
-      <div class="form-title">＋ 新增點位</div>
-      <div class="form-row">
-        <input class="form-input" id="st-name" type="text" placeholder="點位名稱（必填）">
-        <input class="form-input" id="st-loc"  type="text" placeholder="地點（選填）">
-        <input class="form-input" id="st-note" type="text" placeholder="備注（選填）">
-        <button class="add-btn" onclick="addStation()">新增</button>
-      </div>
-    </div>
-    <div class="card" id="station-list-card" style="display:none">
-      <div class="card-title">點位清單</div>
-      <div id="station-list"></div>
-    </div>
-  </div>
-
-  <!-- 提醒模板 -->
-  <div id="tab-template" class="tab-content">
-    <div class="proj-selector">
-      <label>選擇計畫：</label>
-      <select class="form-select" id="tpl-proj-sel" onchange="loadTemplates()">
-        <option value="">— 請選擇 —</option>
-      </select>
-    </div>
-
-    <!-- 提醒內容 -->
-    <div class="form-card" id="tpl-form" style="display:none">
-      <div class="form-title">＋ 新增提醒事項</div>
-      <div class="form-row">
-        <input class="form-input" id="tpl-category" type="text" placeholder="類別（例：出發前提醒）">
-        <button class="add-btn" onclick="addTemplate()">新增</button>
-      </div>
-      <textarea class="form-textarea" id="tpl-content" placeholder="提醒內容（例：攜帶採水桶、滾輪泵浦、確認採樣瓶數量）"></textarea>
-    </div>
-    <div class="card" id="tpl-list-card" style="display:none">
-      <div class="card-title">提醒事項清單</div>
-      <div id="tpl-list"></div>
-    </div>
-
-    <!-- 拍照項目 -->
-    <div class="form-card" id="photo-form" style="display:none">
-      <div class="form-title">📷 拍照項目設定</div>
-      <div style="font-size:12px;color:#999;margin-bottom:8px">用逗號分隔，例：環境照,水色,洗井紀錄表</div>
-      <div class="form-row">
-        <input class="form-input" id="photo-items-input" type="text" placeholder="環境照,水色,洗井紀錄表">
-        <button class="save-btn" onclick="savePhotoItems()">儲存</button>
-      </div>
+<!-- 新增計畫 Modal -->
+<div class="modal-overlay" id="modal-add-proj">
+  <div class="modal-box">
+    <div class="modal-title">新增監測計畫</div>
+    <input class="fi-wide" id="new-proj-name" type="text" placeholder="計畫名稱（必填）"
+           onkeydown="if(event.key==='Enter')document.getElementById('new-proj-desc').focus()">
+    <input class="fi-wide" id="new-proj-desc" type="text" placeholder="說明（選填）"
+           onkeydown="if(event.key==='Enter')addProject()">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddProj()">取消</button>
+      <button class="modal-ok" onclick="addProject()">新增</button>
     </div>
   </div>
 </div>
@@ -237,151 +287,152 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div id="toast"></div>
 
 <script>
-// ============================================================
-// ★ 設定區 ★
-// ============================================================
 const GAS_URL  = 'https://script.google.com/macros/s/AKfycbwhF-X8KAscHycjSeilIgcLxZcz_fMiw5kmOgoVzrjaSF9ePDWolit4FL9ox157JosO/exec';
-const PASSWORD = 'env2026';   // ← 可自行修改密碼
-// ============================================================
+const PASSWORD = 'env2026';  // ← 可修改密碼
 
 let projects = [];
-let currentStations  = [];
-let currentTemplates = [];
+let selected = null;
+let stations = [], templates = [];
 
-// ── 密碼 ──────────────────────────────────────────────────
+// ── 登入 ──────────────────────────────────────────────────
 function doLogin() {
-  const pw = document.getElementById('pw-input').value;
-  if (pw === PASSWORD) {
-    sessionStorage.setItem('admin_ok', '1');
+  if (document.getElementById('pw-input').value === PASSWORD) {
+    sessionStorage.setItem('admin_ok','1');
     document.getElementById('screen-login').style.display = 'none';
-    document.getElementById('screen-admin').style.display = 'block';
+    document.getElementById('screen-admin').style.display = 'flex';
     loadProjects();
   } else {
-    document.getElementById('login-error').textContent = '密碼錯誤，請再試一次';
+    document.getElementById('login-err').textContent = '密碼錯誤';
     document.getElementById('pw-input').value = '';
     document.getElementById('pw-input').focus();
   }
 }
-function doLogout() {
-  sessionStorage.removeItem('admin_ok');
-  location.reload();
-}
-
-// 自動登入（同 session 不用再輸入）
+function doLogout() { sessionStorage.removeItem('admin_ok'); location.reload(); }
 if (sessionStorage.getItem('admin_ok') === '1') {
   document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-admin').style.display = 'block';
+  document.getElementById('screen-admin').style.display = 'flex';
   loadProjects();
 }
 
-// ── 分頁 ──────────────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    const names = ['proj','station','template'];
-    t.classList.toggle('active', names[i] === name);
-  });
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// ── 計畫管理 ──────────────────────────────────────────────
+// ── 計畫列表 ──────────────────────────────────────────────
 async function loadProjects() {
   try {
-    const res  = await fetch(`${GAS_URL}?action=getProjects`);
-    const json = await res.json();
-    projects   = json.data || [];
+    const res = await fetch(`${GAS_URL}?action=getProjects`);
+    projects  = (await res.json()).data || [];
     renderProjList();
-    refreshProjSelectors();
+    if (selected) {
+      const updated = projects.find(p => p.projectId === selected.projectId);
+      if (updated) selectProject(updated); else hideDetail();
+    }
   } catch (e) { showToast('載入失敗'); }
 }
 
 function renderProjList() {
   const el = document.getElementById('proj-list');
-  if (!projects.length) { el.innerHTML = '<div class="empty-hint">尚無計畫，請新增</div>'; return; }
+  if (!projects.length) { el.innerHTML = '<div style="padding:10px;font-size:12px;color:#bbb">尚無計畫</div>'; return; }
   el.innerHTML = projects.map(p => `
-    <div class="list-row">
-      <div class="row-main">
-        <div class="row-name">${p.name}</div>
-        ${p.description ? `<div class="row-sub">${p.description}</div>` : ''}
-        <div class="row-sub" style="color:#aaa;font-size:10px">${p.projectId}</div>
-      </div>
-      <button class="del-btn" onclick="delProject('${p.projectId}','${p.name}')">刪除</button>
+    <div class="proj-item${selected && selected.projectId===p.projectId ? ' active' : ''}"
+         onclick='selectProject(${JSON.stringify(p)})'>
+      <div>${p.name}</div>
+      ${p.description ? `<div class="proj-item-desc">${p.description}</div>` : ''}
     </div>`).join('');
 }
 
-function refreshProjSelectors() {
-  ['station-proj-sel','tpl-proj-sel'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">— 請選擇 —</option>'
-      + projects.map(p => `<option value="${p.projectId}"${p.projectId===cur?' selected':''}>${p.name}</option>`).join('');
-  });
+async function selectProject(p) {
+  selected = p;
+  renderProjList();
+  document.getElementById('empty-panel').style.display = 'none';
+  document.getElementById('proj-detail').style.display = 'block';
+  document.getElementById('detail-title').textContent  = p.name;
+  await Promise.all([loadStations(), loadTemplates()]);
 }
 
+function hideDetail() {
+  selected = null;
+  document.getElementById('proj-detail').style.display = 'none';
+  document.getElementById('empty-panel').style.display = 'flex';
+  renderProjList();
+}
+
+// ── 新增計畫 Modal ────────────────────────────────────────
+function openAddProj() {
+  document.getElementById('new-proj-name').value = '';
+  document.getElementById('new-proj-desc').value = '';
+  document.getElementById('modal-add-proj').classList.add('open');
+  setTimeout(() => document.getElementById('new-proj-name').focus(), 50);
+}
+function closeAddProj() { document.getElementById('modal-add-proj').classList.remove('open'); }
+
 async function addProject() {
-  const name = document.getElementById('proj-name').value.trim();
-  const desc = document.getElementById('proj-desc').value.trim();
+  const name = document.getElementById('new-proj-name').value.trim();
   if (!name) { showToast('請輸入計畫名稱'); return; }
+  const desc = document.getElementById('new-proj-desc').value.trim();
   try {
-    const res  = await post({ action:'createProject', name, description: desc });
+    const res = await post({ action:'createProject', name, description: desc });
     if (!res.ok) throw new Error(res.error);
+    closeAddProj();
     showToast('計畫已新增 ✓');
-    document.getElementById('proj-name').value = '';
-    document.getElementById('proj-desc').value = '';
     await loadProjects();
+    const newP = projects.find(p => p.name === name);
+    if (newP) selectProject(newP);
   } catch (e) { showToast('新增失敗：' + e.message); }
 }
 
-async function delProject(projectId, name) {
-  if (!confirm(`確定刪除計畫「${name}」？\n（不會刪除已有的 Sheets 記錄）`)) return;
+async function delProject() {
+  if (!selected) return;
+  if (!confirm(`確定刪除計畫「${selected.name}」？`)) return;
   try {
-    await post({ action:'deleteProject', projectId });
+    await post({ action:'deleteProject', projectId: selected.projectId });
     showToast('已刪除');
+    selected = null;
     await loadProjects();
+    hideDetail();
   } catch (e) { showToast('刪除失敗'); }
 }
 
-// ── 點位管理 ──────────────────────────────────────────────
-async function loadStations() {
-  const projectId = document.getElementById('station-proj-sel').value;
-  if (!projectId) { document.getElementById('station-form').style.display='none'; document.getElementById('station-list-card').style.display='none'; return; }
-  document.getElementById('station-form').style.display='block';
-  document.getElementById('station-list-card').style.display='block';
-  try {
-    const res = await fetch(`${GAS_URL}?action=getStations&projectId=${projectId}`);
-    currentStations = (await res.json()).data || [];
-    renderStationList();
-  } catch (e) { showToast('載入失敗'); }
+// ── 分頁切換 ──────────────────────────────────────────────
+function switchPanel(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['station','template','photo'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
 }
 
-function renderStationList() {
+// ── 點位 ──────────────────────────────────────────────────
+async function loadStations() {
+  if (!selected) return;
+  const res = await fetch(`${GAS_URL}?action=getStations&projectId=${selected.projectId}`);
+  stations  = (await res.json()).data || [];
+  renderStations();
+}
+
+function renderStations() {
   const el = document.getElementById('station-list');
-  if (!currentStations.length) { el.innerHTML = '<div class="empty-hint">尚無點位</div>'; return; }
-  el.innerHTML = currentStations.map(s => `
+  if (!stations.length) { el.innerHTML = '<div class="empty-hint">尚無點位，請新增</div>'; return; }
+  el.innerHTML = stations.map(s => `
     <div class="list-row">
-      <div class="row-main">
+      <div class="row-info">
         <div class="row-name">${s.name}</div>
         ${s.location ? `<div class="row-sub">${s.location}</div>` : ''}
         ${s.note     ? `<div class="row-sub" style="color:#D97706">⚠️ ${s.note}</div>` : ''}
-        <div class="row-sub" style="color:#aaa;font-size:10px">${s.stationId}</div>
       </div>
+      <div style="font-size:10px;color:#ccc;margin-right:8px">${s.stationId}</div>
       <button class="del-btn" onclick="delStation('${s.stationId}','${s.name}')">刪除</button>
     </div>`).join('');
 }
 
 async function addStation() {
-  const projectId = document.getElementById('station-proj-sel').value;
   const name = document.getElementById('st-name').value.trim();
   if (!name) { showToast('請輸入點位名稱'); return; }
-  const loc  = document.getElementById('st-loc').value.trim();
-  const note = document.getElementById('st-note').value.trim();
   try {
-    const res = await post({ action:'createStation', projectId, name, location: loc, note });
+    const res = await post({ action:'createStation', projectId: selected.projectId,
+      name, location: document.getElementById('st-loc').value.trim(),
+      note: document.getElementById('st-note').value.trim() });
     if (!res.ok) throw new Error(res.error);
     showToast('點位已新增 ✓');
-    document.getElementById('st-name').value = '';
-    document.getElementById('st-loc').value  = '';
-    document.getElementById('st-note').value = '';
+    ['st-name','st-loc','st-note'].forEach(id => document.getElementById(id).value = '');
     await loadStations();
   } catch (e) { showToast('新增失敗：' + e.message); }
 }
@@ -397,28 +448,22 @@ async function delStation(stationId, name) {
 
 // ── 提醒模板 ──────────────────────────────────────────────
 async function loadTemplates() {
-  const projectId = document.getElementById('tpl-proj-sel').value;
-  ['tpl-form','tpl-list-card','photo-form'].forEach(id => {
-    document.getElementById(id).style.display = projectId ? 'block' : 'none';
-  });
-  if (!projectId) return;
-  try {
-    const res = await fetch(`${GAS_URL}?action=getTemplates&projectId=${projectId}`);
-    const all = (await res.json()).data || [];
-    currentTemplates = all.filter(t => t.category !== '拍照任務');
-    const photoTpl   = all.find(t => t.category === '拍照任務');
-    document.getElementById('photo-items-input').value = photoTpl ? photoTpl.photoItems : '';
-    renderTemplateList();
-  } catch (e) { showToast('載入失敗'); }
+  if (!selected) return;
+  const res = await fetch(`${GAS_URL}?action=getTemplates&projectId=${selected.projectId}`);
+  const all  = (await res.json()).data || [];
+  templates  = all.filter(t => t.category !== '拍照任務');
+  const photo = all.find(t => t.category === '拍照任務');
+  initPhotoChips(photo ? photo.photoItems : '');
+  renderTemplates();
 }
 
-function renderTemplateList() {
-  const el = document.getElementById('tpl-list');
-  if (!currentTemplates.length) { el.innerHTML = '<div class="empty-hint">尚無提醒事項</div>'; return; }
-  el.innerHTML = currentTemplates.map(t => `
+function renderTemplates() {
+  const el = document.getElementById('template-list');
+  if (!templates.length) { el.innerHTML = '<div class="empty-hint">尚無提醒事項</div>'; return; }
+  el.innerHTML = templates.map(t => `
     <div class="list-row" style="align-items:flex-start">
-      <div class="row-main">
-        <div class="row-name" style="color:#185FA5;font-size:12px;margin-bottom:4px">${t.category}</div>
+      <div class="row-info">
+        <div style="font-size:11px;font-weight:700;color:#185FA5;margin-bottom:3px">${t.category}</div>
         <div style="font-size:13px;color:#444;white-space:pre-wrap">${t.content}</div>
       </div>
       <button class="del-btn" onclick="delTemplate('${t.templateId}')">刪除</button>
@@ -426,12 +471,11 @@ function renderTemplateList() {
 }
 
 async function addTemplate() {
-  const projectId = document.getElementById('tpl-proj-sel').value;
-  const category  = document.getElementById('tpl-category').value.trim();
-  const content   = document.getElementById('tpl-content').value.trim();
+  const category = document.getElementById('tpl-category').value.trim();
+  const content  = document.getElementById('tpl-content').value.trim();
   if (!category || !content) { showToast('請輸入類別與提醒內容'); return; }
   try {
-    const res = await post({ action:'saveTemplate', projectId, category, content });
+    const res = await post({ action:'saveTemplate', projectId: selected.projectId, category, content });
     if (!res.ok) throw new Error(res.error);
     showToast('提醒已新增 ✓');
     document.getElementById('tpl-category').value = '';
@@ -449,15 +493,76 @@ async function delTemplate(templateId) {
   } catch (e) { showToast('刪除失敗'); }
 }
 
+// ── 拍照項目 Chips ──────────────────────────────────────
+const SYSTEM_DEFAULTS = ['現場記錄表', '水色', '環境照', '水流元'];
+let chipState   = {}; // { itemName: true/false }
+let customChips = []; // 自訂項目名稱陣列
+
+function initPhotoChips(photoItemsStr) {
+  const enabled = new Set(
+    photoItemsStr ? photoItemsStr.split(',').map(s => s.trim()).filter(Boolean) : []
+  );
+  chipState   = {};
+  customChips = [];
+  // 系統預設：啟用狀態 = 是否在已儲存清單中
+  SYSTEM_DEFAULTS.forEach(item => { chipState[item] = enabled.has(item); });
+  // 自訂項目：任何不在 SYSTEM_DEFAULTS 中的已儲存項目
+  [...enabled].filter(item => !SYSTEM_DEFAULTS.includes(item)).forEach(item => {
+    customChips.push(item);
+    chipState[item] = true;
+  });
+  renderPhotoChips();
+}
+
+function renderPhotoChips() {
+  const sysHTML = SYSTEM_DEFAULTS.map(item => `
+    <div class="pchip ${chipState[item] ? 'pchip-sys-on' : 'pchip-sys-off'}"
+         onclick="toggleChip('${item}')">
+      ${item}
+    </div>`).join('');
+  const customHTML = customChips.map(item => `
+    <div class="pchip ${chipState[item] ? 'pchip-custom' : 'pchip-custom-off'}"
+         onclick="toggleChip('${item}')">
+      ${item}
+      <span class="pchip-del" onclick="event.stopPropagation();removeChip('${item}')">✕</span>
+    </div>`).join('');
+  document.getElementById('photo-chips').innerHTML = sysHTML + customHTML;
+}
+
+function toggleChip(item) {
+  chipState[item] = !chipState[item];
+  renderPhotoChips();
+}
+
+function addPhotoChip() {
+  const input = document.getElementById('new-photo-item');
+  const val   = input.value.trim();
+  if (!val) return;
+  if (!customChips.includes(val) && !SYSTEM_DEFAULTS.includes(val)) {
+    customChips.push(val);
+    chipState[val] = true;
+  }
+  input.value = '';
+  renderPhotoChips();
+}
+
+function removeChip(item) {
+  customChips = customChips.filter(c => c !== item);
+  delete chipState[item];
+  renderPhotoChips();
+}
+
 async function savePhotoItems() {
-  const projectId  = document.getElementById('tpl-proj-sel').value;
-  const photoItems = document.getElementById('photo-items-input').value.trim();
-  if (!photoItems) { showToast('請輸入拍照項目'); return; }
+  const photoItems = [
+    ...SYSTEM_DEFAULTS.filter(i => chipState[i]),
+    ...customChips.filter(i => chipState[i])
+  ].join(',');
+  if (!photoItems) { showToast('請至少啟用一個項目'); return; }
   try {
-    const res = await post({ action:'savePhotoItems', projectId, photoItems });
+    const res = await post({ action:'savePhotoItems', projectId: selected.projectId, photoItems });
     if (!res.ok) throw new Error(res.error);
     showToast('拍照項目已儲存 ✓');
-  } catch (e) { showToast('儲存失敗：' + e.message); }
+  } catch (e) { showToast('儲存失敗'); }
 }
 
 // ── 工具 ──────────────────────────────────────────────────
@@ -465,7 +570,6 @@ async function post(data) {
   const res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify(data) });
   return res.json();
 }
-
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
