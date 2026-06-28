@@ -682,26 +682,33 @@ function sendTask() {
     }
   };
 
-  // 直接發送到當前 LINE 對話（不跳選擇畫面）
-  const shareP = liff.sendMessages([flex]);
+  // 檢查是否在群組/聊天室情境中開啟
+  const ctx = liff.getContext();
+  if (!ctx || !['utou','room','group'].includes(ctx.type)) {
+    showToast('請在群組對話中開啟此 LIFF');
+    return;
+  }
 
-  // 非同步記錄到 GAS（失敗不影響發送）
-  const recordP = fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'createTask',
-      taskId, projectId: selectedProject.projectId,
-      assignedTo: '', assignedBy: me.displayName
-    })
-  }).catch(() => {});
-
-  Promise.all([shareP, recordP])
+  // 直接發送到當前 LINE 對話
+  liff.sendMessages([flex])
     .then(() => {
+      // 記錄到 GAS（非關鍵）
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'createTask',
+          taskId, projectId: selectedProject.projectId,
+          assignedTo: '', assignedBy: me.displayName
+        })
+      }).catch(() => {});
       document.getElementById('screen-preview').style.display = 'none';
       showProjectScreen();
       showToast('任務已發送 ✓');
     })
-    .catch(() => showToast('已取消或未發送'));
+    .catch(err => {
+      const msg = err && err.message ? err.message : String(err);
+      showToast('發送失敗：' + msg, 4000);
+    });
 }
 
 // ── 管理功能 ──────────────────────────────────────────────
@@ -823,12 +830,12 @@ function show(id)       { document.getElementById(id).style.display = id === 'sc
 function hide(id)       { document.getElementById(id).style.display = 'none'; }
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
-function showToast(msg) {
+function showToast(msg, ms = 2500) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.style.display = 'block';
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.style.display = 'none', 2200);
+  el._t = setTimeout(() => el.style.display = 'none', ms);
 }
 
 init();
