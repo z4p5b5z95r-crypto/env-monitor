@@ -7,94 +7,114 @@
 <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f6f9; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f3f8; -webkit-tap-highlight-color: transparent; }
 
-.spinner { width: 36px; height: 36px; border: 3px solid #ddd; border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+.spinner { width: 32px; height: 32px; border: 3px solid #ddd; border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── 載入 ── */
+/* ── Loading ── */
 #screen-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 12px; }
 #loading-text { font-size: 13px; color: #888; }
 
 /* ── 點位選擇 ── */
 #screen-station { display: none; }
-.st-header { background: #185FA5; color: #fff; padding: 48px 18px 18px; }
-.st-htop   { font-size: 11px; color: #FFFFFFBF; margin-bottom: 4px; }
-.st-title  { font-size: 20px; font-weight: 700; }
-.st-hint   { font-size: 12px; color: #FFFFFFBF; margin-top: 4px; }
-.st-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
-.st-btn    { background: #fff; border: 0.5px solid #ddd; border-radius: 14px; padding: 18px 14px; text-align: left; cursor: pointer; }
-.st-btn:active { background: #EBF4FF; border-color: #185FA5; }
-.st-name   { font-size: 14px; font-weight: 700; color: #222; }
-.st-loc    { font-size: 11px; color: #888; margin-top: 4px; }
-.st-note   { font-size: 10px; color: #D97706; margin-top: 3px; }
+.st-header { background: #185FA5; color: #fff; padding: 48px 18px 20px; }
+.st-top   { font-size: 11px; color: #FFFFFFBF; margin-bottom: 4px; }
+.st-title { font-size: 20px; font-weight: 700; }
+.st-sub   { font-size: 12px; color: #FFFFFFBF; margin-top: 4px; }
+.st-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+.st-btn   { background: #fff; border: 0.5px solid #dde3ee; border-radius: 14px; padding: 18px 14px; text-align: left; cursor: pointer; }
+.st-btn:active { background: #ebf4ff; border-color: #185FA5; }
+.st-name  { font-size: 14px; font-weight: 700; color: #222; }
+.st-loc   { font-size: 11px; color: #888; margin-top: 4px; }
+.st-note  { font-size: 10px; color: #d97706; margin-top: 3px; }
 
-/* ── 拍照畫面 ── */
-#screen-photo { display: none; flex-direction: column; height: 100vh; }
+/* ── 拍照主畫面 ── */
+#screen-photo { display: none; flex-direction: column; min-height: 100vh; }
 
-.ph-header { background: #185FA5; color: #fff; padding: 44px 18px 14px; flex-shrink: 0; }
-.ph-back   { background: none; border: none; color: #FFFFFFBF; font-size: 12px; cursor: pointer; margin-bottom: 6px; padding: 0; }
-.ph-station { font-size: 11px; color: #FFFFFFBF; }
-.ph-name   { font-size: 20px; font-weight: 700; color: #fff; margin: 2px 0; }
-.ph-sub    { font-size: 11px; color: #FFFFFFBF; }
+.ph-header { background: #185FA5; color: #fff; padding: 44px 18px 16px; flex-shrink: 0; }
+.ph-back   { background: none; border: none; color: #FFFFFFBF; font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 6px; }
+.ph-station { font-size: 20px; font-weight: 700; }
+.ph-meta   { font-size: 12px; color: #FFFFFFBF; margin-top: 3px; }
 
-/* 進度點 */
-.dots-row { display: flex; gap: 6px; justify-content: center; align-items: center; padding: 14px 0 8px; flex-shrink: 0; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #dde3ee; transition: all .2s; }
-.dot.active { background: #185FA5; transform: scale(1.3); }
-.dot.done   { background: #06C755; }
+/* 整體進度條 */
+.progress-bar-wrap { background: rgba(0,0,0,.15); height: 3px; }
+.progress-bar-fill { background: #06C755; height: 3px; transition: width .4s; }
 
-/* 中間拍照區 */
-.photo-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 20px; gap: 14px; overflow-y: auto; }
+/* 捲動區域 */
+.items-scroll { flex: 1; overflow-y: auto; padding: 12px 14px 120px; }
 
-/* 大拍照按鈕 */
-.cam-big-btn {
-  width: 100%; max-width: 340px;
-  background: #185FA5; color: #fff;
-  border: none; border-radius: 18px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; padding: 30px 20px;
-  transition: opacity .15s;
+/* 每個項目卡片 */
+.item-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1.5px solid #e8ecf4;
+  transition: border-color .2s;
 }
-.cam-big-btn:active { opacity: .8; }
-.cam-big-btn.has-photo { background: #1450a0; padding: 18px 20px; }
-.cam-big-btn.maxed    { background: #ccc; pointer-events: none; }
-.cam-icon { font-size: 44px; line-height: 1; }
-.cam-icon.small { font-size: 28px; }
-.cam-text { font-size: 18px; font-weight: 700; }
-.cam-text.small { font-size: 14px; }
-.cam-sub  { font-size: 12px; color: rgba(255,255,255,.8); }
+.item-card.state-sent    { border-color: #06C755; background: #f6fef9; }
+.item-card.state-pending { border-color: #f59e0b; }
+
+/* 卡片標題行 */
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card-name { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+
+/* 狀態標籤 */
+.status-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.badge-empty   { background: #f0f3f8; color: #999; }
+.badge-pending { background: #FEF3C7; color: #d97706; }
+.badge-sent    { background: #dcfce7; color: #15803d; }
+
+/* 拍照按鈕 */
+.cam-btn {
+  width: 100%; height: 52px;
+  background: #185FA5; color: #fff;
+  border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.cam-btn:active  { opacity: .85; }
+.cam-btn.has-photo { background: #1450a0; height: 44px; font-size: 14px; }
+.cam-btn.maxed   { background: #d0d5dd; pointer-events: none; font-size: 13px; }
 
 /* 縮圖 */
-.thumbs-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 340px; }
-.thumb { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; border: .5px solid #ddd; }
+.thumbs-row { display: flex; gap: 7px; flex-wrap: wrap; margin: 10px 0 0; }
+.thumb { width: 64px; height: 64px; border-radius: 9px; object-fit: cover; border: .5px solid #ddd; background: #f0f3f8; }
 
-/* 傳給PM按鈕（當項目有照片時出現） */
-.send-item-btn {
-  width: 100%; max-width: 340px;
-  height: 42px; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;
+/* 傳給PM按鈕 */
+.send-btn {
+  width: 100%; height: 42px; margin-top: 10px;
+  border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
 }
-.send-item-active { background: #06C755; color: #fff; }
-.send-item-sent   { background: #E8F5E9; color: #1D9E75; pointer-events: none; }
-.send-item-hide   { display: none; }
+.send-btn.unsent { background: #06C755; color: #fff; }
+.send-btn.sent   { background: #dcfce7; color: #15803d; pointer-events: none; }
 
-/* 底部導覽 */
-.ph-nav { display: flex; gap: 10px; padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom)); background: #fff; border-top: 0.5px solid #eee; flex-shrink: 0; }
-.nav-prev { flex: 0 0 80px; height: 46px; background: none; border: 0.5px solid #ddd; border-radius: 12px; color: #888; font-size: 14px; cursor: pointer; }
-.nav-next { flex: 1; height: 46px; background: #185FA5; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
-.nav-next.last { background: #06C755; }
-.nav-next:disabled { background: #e0e0e0; color: #bbb; }
+/* 固定底部 */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  background: #fff; border-top: 0.5px solid #e8ecf4;
+  display: flex; gap: 8px;
+}
+.btn-send-all {
+  flex: 1; height: 50px; border: none; border-radius: 14px;
+  background: #185FA5; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.btn-send-all:disabled { background: #e0e5ee; color: #aaa; }
+.btn-send-all.all-sent { background: #06C755; }
 
-/* 送出覆蓋層 */
+/* 覆蓋層 */
 #overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 100; }
-.overlay-box { background: #fff; border-radius: 16px; padding: 24px 28px; text-align: center; min-width: 180px; }
+.overlay-box { background: #fff; border-radius: 16px; padding: 24px 28px; text-align: center; min-width: 160px; }
 .overlay-box .spinner { margin: 0 auto; }
 #overlay-text { font-size: 13px; color: #555; margin-top: 12px; }
 
 /* Toast */
-#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.78); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 22px; display: none; z-index: 200; white-space: nowrap; pointer-events: none; }
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 22px; display: none; z-index: 200; white-space: nowrap; pointer-events: none; }
 
-/* file input 隱藏容器 */
 #inputs { display: none; }
 </style>
 </head>
@@ -108,41 +128,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 <!-- 點位選擇 -->
 <div id="screen-station">
   <div class="st-header">
-    <div class="st-htop" id="st-project"></div>
+    <div class="st-top" id="st-project"></div>
     <div class="st-title">選擇監測點位</div>
-    <div class="st-hint" id="st-date"></div>
+    <div class="st-sub"  id="st-date"></div>
   </div>
   <div class="st-grid" id="station-grid"></div>
 </div>
 
-<!-- 拍照畫面 -->
+<!-- 拍照主畫面 -->
 <div id="screen-photo">
   <div class="ph-header">
     <button class="ph-back" onclick="showStationScreen()">← 切換點位</button>
-    <div class="ph-station" id="ph-station-name"></div>
-    <div class="ph-name"    id="ph-item-name"></div>
-    <div class="ph-sub"     id="ph-progress"></div>
+    <div class="ph-station" id="ph-station"></div>
+    <div class="ph-meta"    id="ph-meta"></div>
   </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
 
-  <div class="dots-row" id="dots-row"></div>
+  <div class="items-scroll" id="items-list"></div>
 
-  <div class="photo-area">
-    <button class="cam-big-btn" id="cam-btn" onclick="triggerCamera()">
-      <div class="cam-icon" id="cam-icon">📷</div>
-      <div class="cam-text" id="cam-text">拍照</div>
-      <div class="cam-sub"  id="cam-sub" style="display:none"></div>
-    </button>
-
-    <div class="thumbs-row" id="thumbs-row"></div>
-
-    <button class="send-item-btn send-item-hide" id="send-item-btn" onclick="sendCurrentItem()">
-      傳給 PM
-    </button>
-  </div>
-
-  <div class="ph-nav">
-    <button class="nav-prev" id="nav-prev" onclick="goPrev()">← 上一項</button>
-    <button class="nav-next" id="nav-next" onclick="goNext()">下一項 →</button>
+  <div class="bottom-bar">
+    <button class="btn-send-all" id="btn-send-all" onclick="sendAllUnsent()">傳未送的給 PM</button>
   </div>
 </div>
 
@@ -158,7 +163,17 @@ let me = null;
 let taskId = '', projectId = '', projectName = '', photoItems = [];
 let stations = [], selectedStation = null;
 let photoState = {}; // { item: [{ driveUrl, sent }] }
-let currentIdx = 0;
+
+// ── Google Drive URL 轉換成可嵌入格式 ────────────────────
+function toEmbedUrl(url) {
+  if (!url) return '';
+  // 已經是 uc 格式
+  if (url.includes('drive.google.com/uc')) return url;
+  // file/d/ID/view → uc?export=view&id=ID
+  const m = url.match(/\/file\/d\/([^/]+)/);
+  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return url;
+}
 
 // ── 初始化 ────────────────────────────────────────────────
 async function init() {
@@ -186,16 +201,14 @@ async function init() {
 
 // ── 點位選擇 ──────────────────────────────────────────────
 function showStationScreen() {
-  document.getElementById('screen-station').style.display = 'block';
-  document.getElementById('screen-photo').style.display   = 'none';
-  document.getElementById('screen-loading').style.display = 'none';
+  show('screen-station'); hide('screen-photo'); hide('screen-loading');
   setText('st-project', projectName);
   setText('st-date', new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' }));
   document.getElementById('station-grid').innerHTML = stations.map(s => `
     <button class="st-btn" onclick='pickStation(${JSON.stringify(s)})'>
       <div class="st-name">${s.name}</div>
       ${s.location ? `<div class="st-loc">📍 ${s.location}</div>` : ''}
-      ${s.note     ? `<div class="st-note">⚠️ ${s.note}</div>`     : ''}
+      ${s.note     ? `<div class="st-note">⚠️ ${s.note}</div>` : ''}
     </button>`).join('');
 }
 
@@ -208,117 +221,111 @@ async function pickStation(station) {
     const data = await res.json();
     (data.photos || []).forEach(p => {
       if (!photoState[p.photoItem]) photoState[p.photoItem] = [];
-      photoState[p.photoItem].push({ driveUrl: p.driveUrl, sent: p.sentToPM === true || p.sentToPM === 'TRUE' });
+      photoState[p.photoItem].push({
+        driveUrl: toEmbedUrl(p.driveUrl),
+        sent: p.sentToPM === true || p.sentToPM === 'TRUE'
+      });
     });
   } catch (e) {}
   hideOverlay();
-  currentIdx = 0;
   showPhotoScreen();
 }
 
-// ── 拍照畫面 ──────────────────────────────────────────────
+// ── 拍照主畫面 ──────────────────────────────────────────
 function showPhotoScreen() {
-  document.getElementById('screen-station').style.display = 'none';
-  document.getElementById('screen-photo').style.display   = 'flex';
-  renderPhotoItem();
+  hide('screen-station'); hide('screen-loading');
+  document.getElementById('screen-photo').style.display = 'flex';
+  setText('ph-station', selectedStation.name);
+  renderAll();
 }
 
-function renderPhotoItem() {
-  const item   = photoItems[currentIdx];
-  const photos = photoState[item] || [];
-  const count  = photos.length;
-  const hasSent   = photos.some(p => p.sent);
-  const hasUnsent = photos.some(p => !p.sent);
+function renderAll() {
+  // header meta
+  const done = photoItems.filter(i => (photoState[i] || []).length > 0).length;
+  setText('ph-meta', `${projectName}　${done} / ${photoItems.length} 項目已拍`);
 
-  setText('ph-station-name', selectedStation.name);
-  setText('ph-item-name',    item);
-  setText('ph-progress',     `${currentIdx + 1} / ${photoItems.length} 項目`);
+  // 整體進度
+  const sentCount = photoItems.filter(i => (photoState[i] || []).some(p => p.sent)).length;
+  document.getElementById('progress-fill').style.width = (sentCount / photoItems.length * 100) + '%';
 
-  // 進度點
-  document.getElementById('dots-row').innerHTML = photoItems.map((_, i) => {
-    const cls = i === currentIdx ? 'active' : ((photoState[photoItems[i]] || []).length > 0 ? 'done' : '');
-    return `<div class="dot ${cls}"></div>`;
+  // 每個項目
+  document.getElementById('items-list').innerHTML = photoItems.map(item => {
+    const photos  = photoState[item] || [];
+    const count   = photos.length;
+    const allSent = count > 0 && photos.every(p => p.sent);
+    const hasPending = photos.some(p => !p.sent);
+
+    // 狀態
+    let cardCls = '', badgeCls = '', badgeText = '';
+    if (allSent) {
+      cardCls = 'state-sent'; badgeCls = 'badge-sent'; badgeText = '✓ 已傳送';
+    } else if (hasPending) {
+      cardCls = 'state-pending'; badgeCls = 'badge-pending'; badgeText = `已拍 ${count} 張`;
+    } else {
+      badgeCls = 'badge-empty'; badgeText = '未拍';
+    }
+
+    // 拍照按鈕
+    let camCls = 'cam-btn', camText = '📷　拍照';
+    if (count >= 5) {
+      camCls += ' maxed'; camText = '已達上限 5 張';
+    } else if (count > 0) {
+      camCls += ' has-photo'; camText = `📷　繼續拍（已拍 ${count} 張）`;
+    }
+
+    // 縮圖
+    const thumbsHtml = photos.map(p =>
+      `<img class="thumb" src="${p.driveUrl}" loading="lazy" onerror="this.style.opacity='.3'">`
+    ).join('');
+
+    // 傳給PM
+    const sendHtml = hasPending
+      ? `<button class="send-btn unsent" onclick="sendItem('${item}')">傳給 PM</button>`
+      : allSent
+        ? `<button class="send-btn sent">✓ 已傳送給 PM</button>`
+        : '';
+
+    return `
+      <div class="item-card ${cardCls}" id="card-${encodeItemId(item)}">
+        <div class="card-top">
+          <div class="card-name">${item}</div>
+          <div class="status-badge ${badgeCls}">${badgeText}</div>
+        </div>
+        <button class="${camCls}" onclick="triggerCamera('${item}')">${camText}</button>
+        ${thumbsHtml ? `<div class="thumbs-row">${thumbsHtml}</div>` : ''}
+        ${sendHtml}
+      </div>`;
   }).join('');
 
-  // 大拍照按鈕
-  const btn  = document.getElementById('cam-btn');
-  const icon = document.getElementById('cam-icon');
-  const text = document.getElementById('cam-text');
-  const sub  = document.getElementById('cam-sub');
-  if (count >= 5) {
-    btn.className  = 'cam-big-btn maxed';
-    icon.className = 'cam-icon small'; icon.textContent = '📷';
-    text.className = 'cam-text small'; text.textContent = '已達上限 5 張';
-    sub.style.display = 'none';
-  } else if (count > 0) {
-    btn.className  = 'cam-big-btn has-photo';
-    icon.className = 'cam-icon small'; icon.textContent = '📷';
-    text.className = 'cam-text small'; text.textContent = `繼續拍照`;
-    sub.style.display = 'block'; sub.textContent = `已拍 ${count} 張`;
+  // 底部按鈕
+  const pendingItems = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent) && (photoState[i] || []).length > 0);
+  const allDone = photoItems.every(i => (photoState[i] || []).length > 0 && (photoState[i] || []).every(p => p.sent));
+  const btn = document.getElementById('btn-send-all');
+  if (allDone) {
+    btn.textContent = '✓ 全部已傳送給 PM';
+    btn.className   = 'btn-send-all all-sent';
+    btn.disabled    = true;
+  } else if (pendingItems.length) {
+    btn.textContent = `傳未送的給 PM（${pendingItems.length} 項）`;
+    btn.className   = 'btn-send-all';
+    btn.disabled    = false;
   } else {
-    btn.className  = 'cam-big-btn';
-    icon.className = 'cam-icon'; icon.textContent = '📷';
-    text.className = 'cam-text'; text.textContent = '拍照';
-    sub.style.display = 'none';
-  }
-
-  // 縮圖
-  document.getElementById('thumbs-row').innerHTML =
-    photos.map(p => `<img class="thumb" src="${p.driveUrl}" loading="lazy">`).join('');
-
-  // 傳給PM按鈕
-  const sendBtn = document.getElementById('send-item-btn');
-  if (!count) {
-    sendBtn.className = 'send-item-btn send-item-hide';
-  } else if (hasSent && !hasUnsent) {
-    sendBtn.className = 'send-item-btn send-item-sent';
-    sendBtn.textContent = '✓ 已傳送給 PM';
-  } else {
-    sendBtn.className = 'send-item-btn send-item-active';
-    sendBtn.textContent = '傳給 PM';
-  }
-
-  // 底部導覽
-  const prevBtn = document.getElementById('nav-prev');
-  const nextBtn = document.getElementById('nav-next');
-  prevBtn.style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
-  if (currentIdx === photoItems.length - 1) {
-    nextBtn.textContent = '全部傳給 PM ✓';
-    nextBtn.className   = 'nav-next last';
-    nextBtn.disabled    = !photoItems.some(i => (photoState[i] || []).length > 0);
-  } else {
-    nextBtn.textContent = '下一項 →';
-    nextBtn.className   = 'nav-next';
-    nextBtn.disabled    = false;
+    btn.textContent = '先拍照再傳給 PM';
+    btn.className   = 'btn-send-all';
+    btn.disabled    = true;
   }
 }
 
-function goPrev() {
-  if (currentIdx > 0) { currentIdx--; renderPhotoItem(); }
-}
-
-function goNext() {
-  if (currentIdx < photoItems.length - 1) {
-    currentIdx++;
-    renderPhotoItem();
-  } else {
-    // 最後一項 → 全部傳給PM
-    const items = photoItems.filter(i => (photoState[i] || []).length > 0);
-    if (items.length) _send(items);
-  }
-}
+function encodeItemId(item) { return item.replace(/[^a-zA-Z0-9一-鿿]/g, '_'); }
 
 // ── 拍照 ─────────────────────────────────────────────────
-function triggerCamera() {
-  const item = photoItems[currentIdx];
+function triggerCamera(item) {
   if ((photoState[item] || []).length >= 5) return;
-  let input = document.getElementById('fi-' + item);
+  const id = 'fi_' + encodeItemId(item);
+  let input = document.getElementById(id);
   if (!input) {
     input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    input.id = 'fi-' + item;
+    input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment'; input.id = id;
     input.addEventListener('change', () => { if (input.files[0]) handleFile(item, input.files[0]); });
     document.getElementById('inputs').appendChild(input);
   }
@@ -329,10 +336,10 @@ function triggerCamera() {
 async function handleFile(item, file) {
   showOverlay('上傳中...');
   try {
-    const base64  = await toBase64(file);
-    const idx     = (photoState[item] || []).length + 1;
+    const base64   = await toBase64(file);
+    const idx      = (photoState[item] || []).length + 1;
     const filename = `${selectedStation.stationId}_${me.displayName}_${item}_${idx}.jpg`;
-    const res  = await fetch(GAS_URL, {
+    const res = await fetch(GAS_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'uploadPhoto', taskId, projectName,
@@ -342,7 +349,8 @@ async function handleFile(item, file) {
     });
     const { ok, driveUrl, error } = await res.json();
     if (ok) {
-      photoState[item].push({ driveUrl, sent: false });
+      if (!photoState[item]) photoState[item] = [];
+      photoState[item].push({ driveUrl: toEmbedUrl(driveUrl), sent: false });
       showToast('上傳完成 ✓');
     } else {
       showToast('上傳失敗：' + (error || '未知'));
@@ -351,28 +359,35 @@ async function handleFile(item, file) {
     showToast('上傳失敗：' + err.message);
   }
   hideOverlay();
-  renderPhotoItem();
+  renderAll();
 }
 
 function toBase64(file) {
-  return new Promise((resolve, reject) => {
+  return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload  = e => resolve(e.target.result.split(',')[1]);
-    r.onerror = reject;
+    r.onload  = e => res(e.target.result.split(',')[1]);
+    r.onerror = rej;
     r.readAsDataURL(file);
   });
 }
 
 // ── 傳送 ─────────────────────────────────────────────────
-function sendCurrentItem() {
-  const item = photoItems[currentIdx];
-  const hasUnsent = (photoState[item] || []).some(p => !p.sent);
-  if (hasUnsent) _send([item]);
+function sendItem(item) { _send([item]); }
+
+function sendAllUnsent() {
+  const items = photoItems.filter(i => (photoState[i] || []).some(p => !p.sent) && (photoState[i] || []).length > 0);
+  if (items.length) _send(items);
 }
 
 async function _send(items) {
   showOverlay('傳送中...');
   try {
+    const ctx = liff.getContext();
+    if (!ctx || !['utou','room','group'].includes(ctx.type)) {
+      showToast('請在群組對話中開啟此 LIFF', 4000);
+      hideOverlay();
+      return;
+    }
     const flex = buildFlex(items);
     await liff.sendMessages([flex]);
     await Promise.all(items.map(item =>
@@ -384,10 +399,10 @@ async function _send(items) {
     items.forEach(item => (photoState[item] || []).forEach(p => p.sent = true));
     showToast('已傳送給 PM ✓');
   } catch(err) {
-    showToast('傳送失敗：' + (err && err.message ? err.message : err));
+    showToast('傳送失敗：' + (err && err.message ? err.message : err), 4000);
   }
   hideOverlay();
-  renderPhotoItem();
+  renderAll();
 }
 
 // ── Flex Message ─────────────────────────────────────────
@@ -408,13 +423,13 @@ function buildFlex(items) {
     body: {
       type: 'box', layout: 'vertical', spacing: 'none',
       contents: [
-        { type: 'text', text: '拍照任務完成狀況', weight: 'bold', size: 'xs', color: '#888888' },
+        { type: 'text', text: '拍照完成項目', weight: 'bold', size: 'xs', color: '#888888' },
         ...photoItems.map(item => {
           const count = (photoState[item] || []).length;
           return {
             type: 'box', layout: 'horizontal', spacing: 'sm', margin: 'sm',
             contents: [
-              { type: 'text', text: count > 0 ? '✓' : '－', color: count > 0 ? '#1DB954' : '#BBBBBB', flex: 0, size: 'sm', weight: count > 0 ? 'bold' : 'regular' },
+              { type: 'text', text: count > 0 ? '✓' : '－', color: count > 0 ? '#06C755' : '#CCCCCC', flex: 0, size: 'sm', weight: 'bold' },
               { type: 'text', text: item + (count > 0 ? ` (${count}張)` : ''), color: count > 0 ? '#333333' : '#AAAAAA', size: 'sm', flex: 1 }
             ]
           };
@@ -423,7 +438,7 @@ function buildFlex(items) {
     }
   });
 
-  // 每個項目的照片 bubble
+  // 每個有照片的項目 → photo bubble
   items.forEach(item => {
     const photos = (photoState[item] || []).filter(p => p.driveUrl);
     if (!photos.length) return;
@@ -450,14 +465,14 @@ function buildFlex(items) {
 
 // ── 工具 ─────────────────────────────────────────────────
 function setText(id, v)  { const el = document.getElementById(id); if (el) el.textContent = v; }
+function show(id)        { document.getElementById(id).style.display = 'block'; }
+function hide(id)        { document.getElementById(id).style.display = 'none'; }
 function showOverlay(msg){ document.getElementById('overlay').style.display = 'flex'; setText('overlay-text', msg); }
 function hideOverlay()   { document.getElementById('overlay').style.display = 'none'; }
-
 function showToast(msg, ms = 2500) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.style.display = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.style.display = 'none', ms);
+  clearTimeout(el._t); el._t = setTimeout(() => el.style.display = 'none', ms);
 }
 
 init();
