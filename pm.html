@@ -288,6 +288,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
       </div>
     </div>
 
+    <!-- 提醒事項 -->
+    <div class="section" style="padding-top:12px" id="reminder-section">
+      <div class="section-label">提醒事項（勾選要加入卡片的）</div>
+      <div style="background:#fff;border-radius:12px;overflow:hidden" id="reminder-list"></div>
+    </div>
+
     <!-- 點位清單（說明用） -->
     <div class="section" style="padding-top:12px">
       <div class="section-label">計畫點位（現場人員開啟後自行選擇）</div>
@@ -360,8 +366,10 @@ const GITHUB_PAGES_URL = 'https://z4p5b5z95r-crypto.github.io/env-monitor'; // G
 let me = null;
 let projects = [], selectedProject = null;
 let templates = [], stations = [];
-let allItems = [];      // 所有可選項目（模板 + 自訂）
-let checkedItems = [];  // 已勾選的項目
+let allItems = [];          // 所有可選拍照項目
+let checkedItems = [];      // 已勾選拍照項目
+let reminderTemplates = []; // 提醒事項清單
+let checkedReminders  = []; // 已勾選提醒
 
 // ── 初始化 ────────────────────────────────────────────────
 async function init() {
@@ -414,10 +422,13 @@ async function selectProject(project) {
     stations  = (await sRes.json()).data || [];
   } catch (e) { templates = []; stations = []; }
 
-  // 從模板取出拍照項目
-  const photoTpl = templates.find(t => t.category === '拍照任務');
-  allItems     = photoTpl ? photoTpl.photoItems.split(',').map(s => s.trim()).filter(Boolean) : [];
-  checkedItems = [...allItems];
+  // 拍照項目
+  const photoTpl    = templates.find(t => t.category === '拍照任務');
+  allItems          = photoTpl ? photoTpl.photoItems.split(',').map(s => s.trim()).filter(Boolean) : [];
+  checkedItems      = [...allItems];
+  // 提醒事項（排除拍照任務欄位）
+  reminderTemplates = templates.filter(t => t.category !== '拍照任務' && t.content);
+  checkedReminders  = reminderTemplates.map(t => t.templateId); // 預設全選
 
   hide('screen-project');
   show('screen-compose');
@@ -432,6 +443,7 @@ function renderComposeScreen() {
 
   renderTemplateChips();
   renderItemsList();
+  renderReminderList();
   renderStationPreview();
   updatePreview();
 }
@@ -499,6 +511,31 @@ function addCustomItem() {
   updatePreview();
 }
 
+function renderReminderList() {
+  const sec = document.getElementById('reminder-section');
+  const el  = document.getElementById('reminder-list');
+  if (!reminderTemplates.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  el.innerHTML = reminderTemplates.map(t => {
+    const on = checkedReminders.includes(t.templateId);
+    return `
+      <div class="item-row" onclick="toggleReminder('${t.templateId}')">
+        <div class="check-box ${on ? 'on' : ''}">${on ? '✓' : ''}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:#185FA5">${t.category}</div>
+          <div style="font-size:12px;color:#555;margin-top:2px">${t.content}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleReminder(id) {
+  const idx = checkedReminders.indexOf(id);
+  idx > -1 ? checkedReminders.splice(idx, 1) : checkedReminders.push(id);
+  renderReminderList();
+  updatePreview();
+}
+
 function renderStationPreview() {
   const el = document.getElementById('station-preview');
   if (!stations.length) { el.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#aaa">尚未設定點位，請先在 Sheets stations 工作表新增</div>'; return; }
@@ -527,17 +564,33 @@ function updatePreview() {
 }
 
 function showPreview() {
-  // 填入預覽卡片內容
   const dateStr = new Date().toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
   setText('prev-proj', selectedProject ? selectedProject.name : '');
   setText('prev-meta', `${dateStr}　發送：${me ? me.displayName : 'PM'}`);
-  document.getElementById('prev-items').innerHTML =
-    checkedItems.map(i => `<div class="line-bub-item"><span>📷</span><span>${i}</span></div>`).join('');
+
+  // 拍照項目
+  let bodyHTML = `<div class="line-bub-section-title">拍照項目</div>`
+    + checkedItems.map(i => `<div class="line-bub-item"><span>📷</span><span>${i}</span></div>`).join('');
+
+  // 提醒事項
+  const selRem = reminderTemplates.filter(t => checkedReminders.includes(t.templateId));
+  if (selRem.length) {
+    bodyHTML += `<div style="border-top:.5px solid #eee;margin:10px 0 8px"></div>
+      <div class="line-bub-section-title">提醒事項</div>`
+      + selRem.map(r => `
+        <div class="line-bub-item" style="align-items:flex-start">
+          <span>⚠️</span>
+          <div><div style="font-size:11px;font-weight:700;color:#D97706">${r.category}</div>
+               <div style="font-size:12px;color:#555">${r.content}</div></div>
+        </div>`).join('');
+  }
+  document.getElementById('prev-items').innerHTML = bodyHTML;
+
   const note = document.getElementById('task-note').value.trim();
   const noteEl = document.getElementById('prev-note');
   if (note) { noteEl.style.display = 'block'; noteEl.textContent = '📌 ' + note; }
   else       { noteEl.style.display = 'none'; }
-  // 切換畫面
+
   hide('screen-compose');
   document.getElementById('screen-preview').style.display = 'flex';
 }
@@ -567,6 +620,9 @@ function sendTask() {
   const note    = document.getElementById('task-note').value.trim();
   const dateStr = d.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
 
+  // 已勾選的提醒事項物件
+  const selectedReminders = reminderTemplates.filter(t => checkedReminders.includes(t.templateId));
+
   // 組合 Flex Message
   const flex = {
     type: 'flex',
@@ -592,9 +648,26 @@ function sendTask() {
               { type: 'text', text: item, size: 'sm', color: '#333333', flex: 1 }
             ]
           })),
+          // ── 提醒事項 ──
+          ...(selectedReminders.length ? [
+            { type: 'separator', margin: 'md' },
+            { type: 'text', text: '提醒事項', weight: 'bold', size: 'sm', color: '#888888', margin: 'md' },
+            ...selectedReminders.map(r => ({
+              type: 'box', layout: 'horizontal', spacing: 'sm', margin: 'sm',
+              contents: [
+                { type: 'text', text: '⚠️', flex: 0, size: 'xs' },
+                { type: 'box', layout: 'vertical', flex: 1,
+                  contents: [
+                    { type: 'text', text: r.category, size: 'xs', weight: 'bold', color: '#D97706' },
+                    { type: 'text', text: r.content,  size: 'xs', color: '#555555', wrap: true }
+                  ]
+                }
+              ]
+            }))
+          ] : []),
           ...(note ? [
             { type: 'separator', margin: 'md' },
-            { type: 'text', text: note, size: 'xs', color: '#888888', wrap: true, margin: 'md' }
+            { type: 'text', text: '📌 ' + note, size: 'xs', color: '#888888', wrap: true, margin: 'md' }
           ] : [])
         ]
       },
