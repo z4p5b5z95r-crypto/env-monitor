@@ -153,6 +153,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 
 <div id="overlay"><div class="overlay-box"><div class="spinner"></div><div id="overlay-text">上傳中...</div></div></div>
 <div id="toast"></div>
+<div id="err-bar" style="display:none;position:fixed;bottom:70px;left:14px;right:14px;background:#FEE2E2;border:1px solid #f87171;color:#b91c1c;padding:10px 14px;border-radius:12px;font-size:12px;z-index:150;word-break:break-all">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+    <span id="err-msg"></span>
+    <button onclick="document.getElementById('err-bar').style.display='none'" style="background:none;border:none;color:#b91c1c;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
+  </div>
+</div>
 <div id="inputs"></div>
 
 <script>
@@ -164,15 +170,15 @@ let taskId = '', projectId = '', projectName = '', photoItems = [];
 let stations = [], selectedStation = null;
 let photoState = {}; // { item: [{ driveUrl, sent }] }
 
-// ── Google Drive URL 轉換成可嵌入格式 ────────────────────
+// ── Google Drive URL → thumbnail（LIFF 瀏覽器不支援 uc redirect）────
 function toEmbedUrl(url) {
   if (!url) return '';
-  // 已經是 uc 格式
-  if (url.includes('drive.google.com/uc')) return url;
-  // file/d/ID/view → uc?export=view&id=ID
-  const m = url.match(/\/file\/d\/([^/]+)/);
-  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
-  return url;
+  let id = null;
+  const m1 = url.match(/\/file\/d\/([^/?]+)/);
+  const m2 = url.match(/[?&]id=([^&]+)/);
+  if (m1) id = m1[1];
+  else if (m2) id = m2[1];
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w400` : url;
 }
 
 // ── 初始化 ────────────────────────────────────────────────
@@ -392,8 +398,12 @@ async function _send(items) {
     ));
     items.forEach(item => (photoState[item] || []).forEach(p => p.sent = true));
     showToast('已傳送給 PM ✓');
+    document.getElementById('err-bar').style.display = 'none';
   } catch(err) {
-    showToast('傳送失敗：' + (err && err.message ? err.message : err), 4000);
+    const msg = err && err.message ? err.message : String(err);
+    document.getElementById('err-msg').textContent = '傳送失敗：' + msg;
+    document.getElementById('err-bar').style.display = 'block';
+    showToast('傳送失敗', 2000);
   }
   hideOverlay();
   renderAll();
