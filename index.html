@@ -501,7 +501,8 @@ html[data-theme="dark"] .glass::after{
       <button class="btn btn-p btn-full" id="l-btn" onclick="doLogin()">登入</button>
     </div>
 
-    <p class="lfoot">登入後將保持登入狀態<br>共用裝置請記得登出</p>
+    <p class="lfoot">登入後將保持登入狀態<br>共用裝置請記得登出<br>
+      <span id="lver" style="opacity:.55"></span></p>
   </div>
 </div>
 
@@ -548,6 +549,7 @@ html[data-theme="dark"] .glass::after{
    ESPC 監測行程 — 前端
    後端：Google Apps Script（下方 GAS_URL）
    ══════════════════════════════════════════════════════════ */
+var APP_VER='2026-09-22a';      // 改版號可用來確認瀏覽器抓到的是不是新檔
 var GAS_URL='https://script.google.com/macros/s/AKfycbxq0Lj59wXYKQkVnbaG607FOBmEmH64VkbxqfIOBbNnbufWlqQ82x5RAKmlbFhpOssHng/exec';
 
 /* 寫入類的動作要跑很久（整月資料逐列寫試算表），給長一點的時限 */
@@ -1069,6 +1071,7 @@ function pcolor(n){if(!n)return '#71717a';
 
 /* ══ 啟動 ══ */
 window.addEventListener('DOMContentLoaded',function(){
+  showVer();
   $('i-p').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
   $('i-u').addEventListener('keydown',function(e){if(e.key==='Enter')$('i-p').focus();});
   document.querySelectorAll('[data-ic]').forEach(function(el){
@@ -1645,7 +1648,9 @@ function morePage(){
     +'<div class="link" style="cursor:default">深色模式'
     +'<button class="sw'+((ls('espc_theme')||'dark')==='dark'?' on':'')+'" onclick="toggleTheme()"></button></div>'
     +'<div class="hint" style="margin:18px 6px">登入身分：'+he(UNAME)+'（'+roleLabel(ROLE)+'）'
-    +(ENGNAME?'<br>對應工程師：'+he(ENGNAME):'')+'</div>';
+    +(ENGNAME?'<br>對應工程師：'+he(ENGNAME):'')
+    +'<br>版本：'+he(APP_VER)
+    +'　<a href="#" onclick="hardReload();return false" style="color:var(--accT)">強制更新</a></div>';
   return h;
 }
 
@@ -1883,6 +1888,27 @@ function refetch(){
   if(cc&&cc.date===t)todayRows=(cc.rows||[]).filter(passF);
   rows=allRows.filter(passF);
   render();
+}
+
+/** 清掉 Service Worker 與快取後重新載入，用來擺脫抓到舊檔的情況 */
+function hardReload(){
+  var jobs=[];
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+        return Promise.all(rs.map(function(r){return r.unregister();}));
+      }));
+  }catch(e){}
+  try{
+    if(window.caches&&caches.keys)
+      jobs.push(caches.keys().then(function(ks){
+        return Promise.all(ks.map(function(k){return caches.delete(k);}));
+      }));
+  }catch(e){}
+  Promise.all(jobs).catch(function(){}).then(function(){
+    var u=location.href.split('#')[0].split('?')[0];
+    location.replace(u+'?v='+Date.now());
+  });
 }
 
 /* ══ 手勢 ══════════════════════════════════════════
@@ -2708,6 +2734,10 @@ function ntSup(){return 'Notification' in window;}
 function regSW(){
   if(!('serviceWorker' in navigator))return;
   navigator.serviceWorker.register('sw.js').then(function(r){SWREG=r;}).catch(function(){});
+}
+function showVer(){
+  var e=$('lver');
+  if(e)e.textContent='版本 '+APP_VER;
 }
 function ntInit(){
   initSwipe();
